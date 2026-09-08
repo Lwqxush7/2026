@@ -617,6 +617,9 @@ function applyRemoteData(data){
 
 function initCloudSync(){
   if(!cloudEnabled){ updateAccountUI(); return; }
+  firebase.auth().getRedirectResult().catch((e) => {
+    console.error('Google giriş hatası:', e.code, e.message);
+  });
   firebase.auth().onAuthStateChanged((user) => {
     currentUser = user;
     updateAccountUI();
@@ -674,10 +677,13 @@ function openAccountModal(){
     googleBtn.textContent = 'Google ile Giriş Yap';
     googleBtn.addEventListener('click', () => {
       errBox.textContent = '';
+      googleBtn.disabled = true;
       const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider)
-        .then(() => closeModal())
-        .catch((e) => { errBox.textContent = 'Giriş başarısız: ' + e.message; });
+      firebase.auth().signInWithRedirect(provider)
+        .catch((e) => {
+          errBox.textContent = 'Giriş başarısız: ' + e.message;
+          googleBtn.disabled = false;
+        });
     });
     body.appendChild(googleBtn);
   });
