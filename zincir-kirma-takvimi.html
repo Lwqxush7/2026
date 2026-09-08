@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#16231b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Zincir 2026">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>2026 Zinciri Kırma</title>
+
+<!-- OneSignal: telefon kilitliyken / uygulama kapalıyken de bildirim için.
+     Aşağıdaki APP_ID_BURAYA yerine OneSignal panelinden aldığın App ID'yi yapıştır. -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(function (OneSignal) {
+    OneSignal.init({ appId: "APP_ID_BURAYA" });
+  });
+</script>
+
+<!-- Firebase: PC ve telefon arasında aynı verileri görmek (hesapla giriş + bulut senkronu) için.
+     Aşağıdaki alanları Firebase konsolundan aldığın kendi proje bilgilerinle doldur. -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+   var firebaseConfig = {
+     apiKey: "AIzaSyCGMPGbw0ygOaIh_p1IbaI40ng7a6TeCXc",
+     authDomain: "project-8555786315836360742.firebaseapp.com",
+     databaseURL: "https://project-8555786315836360742-default-rtdb.europe-west1.firebasedatabase.app",
+     projectId: "project-8555786315836360742",
+     storageBucket: "project-8555786315836360742.firebasestorage.app",
+     messagingSenderId: "129978715392",
+     appId: "1:129978715392:web:b872ac537457a6be6af7e5",
+     measurementId: "G-JQWP88LQ3D"
+   };
+  var cloudEnabled = firebaseConfig.apiKey !== "APIKEY_BURAYA";
+  if (cloudEnabled) {
+    firebase.initializeApp(firebaseConfig);
+  }
+</script>
+
+<style>
+:root{
+  --bg: #16231b;
+  --panel: #1e2f24;
+  --panel-line: #33473a;
+  --parchment: #e9e2ce;
+  --gold: #c9a227;
+  --clay: #a9673a;
+  --ember: #d9743f;
+  --muted: #8ba192;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background: var(--bg);
+  color: var(--parchment);
+  font-family: 'Georgia', 'Iowan Old Style', serif;
+  padding: 32px 20px 60px;
+}
+.wrap{ max-width: 980px; margin: 0 auto; }
+header{ text-align:left; margin-bottom: 22px; border-bottom: 1px solid var(--panel-line); padding-bottom: 18px; }
+h1{
+  font-size: 34px;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px;
+  font-weight: 400;
+  color: var(--parchment);
+}
+.sub{
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  font-size: 13.5px;
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.5;
+}
+.stats{
+  display:flex; align-items:flex-end; gap: 24px; margin-top: 18px; flex-wrap: wrap;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+}
+.stat .num{ font-family: Georgia, serif; font-size: 26px; color: var(--gold); line-height:1; }
+.lbl-row{ display:flex; align-items:center; gap: 6px; margin-top: 4px; }
+.stat .lbl{ font-size: 11.5px; color: var(--muted); }
+.icon-btn{
+  background: transparent;
+  border: 1px solid var(--panel-line);
+  color: var(--parchment);
+  width: 24px; height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display:flex; align-items:center; justify-content:center;
+}
+.icon-btn:hover{ border-color: var(--gold); }
+.icon-btn.bell{ align-self: center; font-size: 15px; }
+.icon-btn.wide{ width:auto; height:auto; padding:7px 13px; font-size:12.5px; font-family:-apple-system, sans-serif; }
+.grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 700px){ .grid{ grid-template-columns: 1fr 1fr; } }
+@media (max-width: 460px){ .grid{ grid-template-columns: 1fr; } }
+.month{
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 3px;
+  padding: 14px 14px 16px;
+}
+.month h2{
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+  color: var(--parchment);
+  display:flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.month h2 .count{
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+}
+table{ width:100%; border-collapse: collapse; font-family: -apple-system, 'Segoe UI', sans-serif; }
+th{
+  font-size: 10px; font-weight: 400; color: var(--muted);
+  padding-bottom: 6px;
+}
+td{
+  text-align:center;
+  font-size: 12.5px;
+  padding: 3px 0;
+  position: relative;
+}
+.day{
+  width: 24px; height: 24px;
+  line-height: 24px;
+  margin: 0 auto;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: context-menu;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+}
+.day:hover{
+  box-shadow: inset 0 0 0 1px var(--muted);
+}
+.day.today{
+  box-shadow: inset 0 0 0 1px var(--gold);
+  color: var(--parchment);
+}
+.day.full{
+  background: var(--ember);
+  color: transparent;
+  font-weight: 600;
+}
+.day.full::after{
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  color: #1a120b;
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+.day.full.today{
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.day.filler{ visibility: hidden; cursor: default; }
+
+/* ---- Modal (ortada, blurlu arkaplan) ---- */
+.modal-overlay{
+  position: fixed; inset:0;
+  background: rgba(10,15,11,0.55);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  display:flex; align-items:center; justify-content:center;
+  z-index: 300;
+  padding: 20px;
+}
+.modal-box{
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 6px;
+  width: min(380px, 100%);
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 18px 20px 22px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+}
+.modal-head{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--panel-line);
+}
+.modal-title{ font-family: Georgia, serif; font-size: 17px; color: var(--parchment); }
+.modal-close{ background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; padding: 2px 4px; }
+.modal-close:hover{ color: var(--parchment); }
+.modal-empty, .modal-info{ font-size: 12.5px; color: var(--muted); line-height:1.6; padding: 4px 2px 10px; }
+.goal-item{
+  display:flex; align-items:center; gap:10px;
+  padding: 10px 4px;
+  border-top:1px solid var(--panel-line);
+  font-size:14px;
+  cursor:pointer;
+}
+.goal-item:first-of-type{ border-top:none; }
+.goal-item .num{ color:var(--muted); font-size:12px; width:18px; flex-shrink:0; }
+.goal-item input[type=checkbox]{ width:16px; height:16px; accent-color: var(--ember); flex-shrink:0; }
+.goal-item-name{ flex:1; }
+.goal-config-row{
+  display:flex; align-items:center; gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--panel-line);
+}
+.goal-config-row:first-of-type{ border-top: none; }
+.goal-config-row .num{ color:var(--muted); font-size:12px; width:18px; flex-shrink:0; }
+.goal-name{
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--panel-line);
+  color: var(--parchment);
+  font-family: -apple-system, sans-serif;
+  font-size: 13px;
+  padding: 6px 9px;
+  border-radius: 3px;
+}
+.goal-name::placeholder{ color: #5c6f61; }
+.day-toggles{ display:flex; gap: 4px; flex-shrink:0; }
+.day-toggle{
+  width: 24px; height: 24px;
+  border-radius: 3px;
+  border: 1px solid var(--panel-line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 9.5px;
+  cursor: pointer;
+  font-family: -apple-system, sans-serif;
+  padding: 0;
+}
+.day-toggle.active{
+  background: var(--ember);
+  border-color: var(--ember);
+  color: #1a120b;
+  font-weight: 600;
+}
+.reminder-row{ display:flex; align-items:center; gap:10px; padding: 9px 2px; font-size: 13.5px; }
+.reminder-row input[type=time]{
+  background: var(--bg); border:1px solid var(--panel-line); color:var(--parchment);
+  border-radius:3px; padding:5px 7px; font-family:-apple-system, sans-serif; font-size:13px;
+}
+.reminder-row input[type=checkbox]{ width:16px; height:16px; accent-color:var(--ember); }
+.backup-row{ display:flex; gap:10px; margin-top: 6px; flex-wrap: wrap; }
+.field-full{ width:100%; }
+footer{
+  margin-top: 34px;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--panel-line);
+  padding-top: 14px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>2026 — Zincirini Kırma</h1>
+    <div class="sub">Bir güne sağ tıkla, o gün için geçerli hedefler ortada açılsın. Hedeflerin kaçı tikliyse yuvarlağın içi o kadar dolar; hepsi tikliyse tamamen dolup turuncu olur.</div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="streakBest">0</div><div class="lbl-row"><span class="lbl">EN UZUN ZİNCİR</span></div></div>
+      <div class="stat"><div class="num" id="totalDays">0</div><div class="lbl-row"><span class="lbl">TAM GÜN</span></div></div>
+      <div class="stat"><div class="num" id="halfDays">0</div><div class="lbl-row"><span class="lbl">YARIM GÜN</span></div></div>
+      <div class="stat">
+        <div class="num" id="undoneDays">0</div>
+        <div class="lbl-row"><span class="lbl">YAPILMAMIŞ GÜN</span><button class="icon-btn" id="goalsBtn" title="Hedefleri düzenle">⋮</button></div>
+      </div>
+      <button class="icon-btn bell" id="reminderBtn" title="Hatırlatıcı">🔔</button>
+      <button class="icon-btn bell" id="backupBtn" title="Yedekle / Geri Yükle">💾</button>
+      <button class="icon-btn bell" id="accountBtn" title="Hesap">👤</button>
+    </div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>Sağ tıkla hedefleri işaretle, ⋮ ile 12 hedefi ve günlerini düzenle, 🔔 ile hatırlatıcı kur, 💾 ile dosyaya yedekle, 👤 ile hesap aç/giriş yap. Hesapla giriş yaparsan aynı veriler telefon ve bilgisayarda birlikte güncellenir.</footer>
+</div>
+<script>
+const monthNames = ["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
+const dayLetters = ["Pt","Sl","Çr","Pr","Cm","Ct","Pz"];
+const YEAR = 2026;
+const todayStr = new Date().toISOString().slice(0,10);
+const GOALS_KEY = 'goals-2026-v2';
+const COMPLETIONS_KEY = 'completions-2026';
+const REMINDER_KEY = 'reminder-2026';
+
+let goals = [];
+let completions = {};
+let reminder = { enabled:false, time:'20:00', lastNotifiedDate:null };
+let currentUser = null;
+let firestoreUnsub = null;
+
+function defaultGoals(){
+  const list = [];
+  for(let i=1;i<=12;i++) list.push({ id:'g'+i, name:'', days:[0,1,2,3,4,5,6] });
+  return list;
+}
+
+function loadState(){
+  try{ const g = localStorage.getItem(GOALS_KEY); goals = g ? JSON.parse(g) : defaultGoals(); }
+  catch(e){ goals = defaultGoals(); }
+  try{ const c = localStorage.getItem(COMPLETIONS_KEY); completions = c ? JSON.parse(c) : {}; }
+  catch(e){ completions = {}; }
+  try{ const r = localStorage.getItem(REMINDER_KEY); if(r) reminder = JSON.parse(r); }
+  catch(e){}
+}
+
+function pushToCloud(){
+  if(cloudEnabled && currentUser){
+    firebase.firestore().collection('users').doc(currentUser.uid)
+      .set({ goals, completions, reminder }).catch(() => {});
+  }
+}
+function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
+function saveCompletions(){ try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){} pushToCloud(); }
+function saveReminder(){ try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){} pushToCloud(); }
+
+function weekdayIndex(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const wd = new Date(y, m-1, d).getDay();
+  return (wd === 0) ? 6 : wd - 1;
+}
+
+// Bir günün hedeflerinin yüzde kaçının tamamlandığını ve o gün hiç hedef olup olmadığını döndürür.
+function dayInfo(dateStr){
+  const wd = weekdayIndex(dateStr);
+  const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
+  if(applicable.length === 0) return { percent: 0, hasGoals: false };
+  const done = new Set(completions[dateStr] || []);
+  const doneCount = applicable.filter(g => done.has(g.id)).length;
+  return { percent: Math.round((doneCount / applicable.length) * 100), hasGoals: true };
+}
+function dayPercent(dateStr){ return dayInfo(dateStr).percent; }
+
+function toggleGoalCompletion(dateStr, goalId, checked){
+  if(!completions[dateStr]) completions[dateStr] = [];
+  const idx = completions[dateStr].indexOf(goalId);
+  if(checked && idx === -1) completions[dateStr].push(goalId);
+  if(!checked && idx !== -1) completions[dateStr].splice(idx,1);
+  if(completions[dateStr].length === 0) delete completions[dateStr];
+  saveCompletions();
+  renderGrid();
+  renderStats();
+}
+
+// ---------- Modal sistemi ----------
+let overlayEl = null;
+function closeModal(){
+  if(overlayEl){ overlayEl.remove(); overlayEl = null; }
+  document.removeEventListener('keydown', escHandler);
+}
+function escHandler(e){ if(e.key === 'Escape') closeModal(); }
+function openModal(titleText, buildBody){
+  closeModal();
+  overlayEl = document.createElement('div');
+  overlayEl.className = 'modal-overlay';
+  overlayEl.addEventListener('click', (e) => { if(e.target === overlayEl) closeModal(); });
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  const head = document.createElement('div');
+  head.className = 'modal-head';
+  const t = document.createElement('div');
+  t.className = 'modal-title';
+  t.textContent = titleText;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', closeModal);
+  head.appendChild(t);
+  head.appendChild(closeBtn);
+  box.appendChild(head);
+  const body = document.createElement('div');
+  box.appendChild(body);
+  buildBody(body);
+  overlayEl.appendChild(box);
+  document.body.appendChild(overlayEl);
+  document.addEventListener('keydown', escHandler);
+}
+
+function openDayModal(dateStr){
+  const wd = weekdayIndex(dateStr);
+  const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
+  const [y,m,d] = dateStr.split('-');
+  openModal(`${d}.${m}.${y}`, (body) => {
+    if(applicable.length === 0){
+      const p = document.createElement('div');
+      p.className = 'modal-empty';
+      p.textContent = 'Bu gün için hedef yok. Yukarıdaki ⋮ ile hedef ekleyip bu günü seçebilirsin.';
+      body.appendChild(p);
+      return;
+    }
+    const done = new Set(completions[dateStr] || []);
+    applicable.forEach((g, i) => {
+      const row = document.createElement('label');
+      row.className = 'goal-item';
+      const num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = (i+1) + '.';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = done.has(g.id);
+      cb.addEventListener('change', () => toggleGoalCompletion(dateStr, g.id, cb.checked));
+      const span = document.createElement('span');
+      span.className = 'goal-item-name';
+      span.textContent = g.name;
+      row.appendChild(num);
+      row.appendChild(cb);
+      row.appendChild(span);
+      body.appendChild(row);
+    });
+  });
+}
+
+function openGoalsModal(){
+  openModal('12 Hedef', (body) => {
+    const info = document.createElement('div');
+    info.className = 'modal-info';
+    info.textContent = 'İsim ver ve haftanın hangi günlerinde geçerli olduğunu seç. Bu liste her ay için aynı şekilde geçerlidir.';
+    body.appendChild(info);
+    goals.forEach((g, idx) => {
+      const row = document.createElement('div');
+      row.className = 'goal-config-row';
+      const num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = (idx+1) + '.';
+      const input = document.createElement('input');
+      input.className = 'goal-name';
+      input.placeholder = 'Hedef ' + (idx+1);
+      input.value = g.name;
+      input.addEventListener('input', () => {
+        g.name = input.value;
+        saveGoals();
+        renderGrid();
+        renderStats();
+      });
+      const toggles = document.createElement('div');
+      toggles.className = 'day-toggles';
+      dayLetters.forEach((label, dayIdx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'day-toggle' + (g.days.includes(dayIdx) ? ' active' : '');
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+          const pos = g.days.indexOf(dayIdx);
+          if(pos === -1) g.days.push(dayIdx); else g.days.splice(pos,1);
+          saveGoals();
+          btn.classList.toggle('active');
+          renderGrid();
+          renderStats();
+        });
+        toggles.appendChild(btn);
+      });
+      row.appendChild(num);
+      row.appendChild(input);
+      row.appendChild(toggles);
+      body.appendChild(row);
+    });
+  });
+}
+
+function openReminderModal(){
+  openModal('Hatırlatıcı', (body) => {
+    const info = document.createElement('div');
+    info.className = 'modal-info';
+    info.textContent = 'Belirlediğin saatte, o gün henüz tam işaretlenmemişse bu sekme açıkken bildirim gönderir. Uygulama tamamen kapalıyken de bildirim istiyorsan OneSignal + Zapier kurulumu ayrıca gerekir.';
+    body.appendChild(info);
+    const timeRow = document.createElement('div');
+    timeRow.className = 'reminder-row';
+    const timeLbl = document.createElement('span');
+    timeLbl.textContent = 'Saat';
+    const timeInput = document.createElement('input');
+    timeInput.type = 'time';
+    timeInput.value = reminder.time;
+    timeInput.addEventListener('change', () => { reminder.time = timeInput.value; saveReminder(); });
+    timeRow.appendChild(timeLbl);
+    timeRow.appendChild(timeInput);
+    body.appendChild(timeRow);
+    const enableRow = document.createElement('label');
+    enableRow.className = 'reminder-row';
+    const enableCb = document.createElement('input');
+    enableCb.type = 'checkbox';
+    enableCb.checked = reminder.enabled;
+    const permStatus = document.createElement('div');
+    permStatus.className = 'modal-info';
+    function refreshPermStatus(){
+      if(!('Notification' in window)){ permStatus.textContent = 'Bu tarayıcı bildirimleri desteklemiyor.'; return; }
+      const p = Notification.permission;
+      permStatus.textContent = 'İzin durumu: ' + (p === 'granted' ? 'verildi' : p === 'denied' ? 'reddedildi — tarayıcı ayarlarından açman gerekir' : 'henüz istenmedi');
+    }
+    enableCb.addEventListener('change', () => {
+      reminder.enabled = enableCb.checked;
+      saveReminder();
+      if(reminder.enabled && 'Notification' in window && Notification.permission === 'default'){
+        Notification.requestPermission().then(refreshPermStatus);
+      } else {
+        refreshPermStatus();
+      }
+    });
+    enableRow.appendChild(enableCb);
+    enableRow.appendChild(document.createTextNode(' Bildirimleri aç'));
+    body.appendChild(enableRow);
+    body.appendChild(permStatus);
+    refreshPermStatus();
+  });
+}
+
+// ---------- Yedekleme (dışa aktar / içe aktar) ----------
+function exportBackup(){
+  const data = { goals, completions, reminder, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'zincir-2026-yedek.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importBackupFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(Array.isArray(data.goals)) goals = data.goals;
+      if(data.completions && typeof data.completions === 'object') completions = data.completions;
+      if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
+      saveGoals(); saveCompletions(); saveReminder();
+      renderGrid(); renderStats();
+      alert('Yedek geri yüklendi.');
+    }catch(e){
+      alert('Dosya okunamadı, geçerli bir yedek dosyası seç.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function openBackupModal(){
+  openModal('Yedekleme', (body) => {
+    const info = document.createElement('div');
+    info.className = 'modal-info';
+    info.textContent = 'Hesapla giriş yapmadıysan veriler sadece bu cihazdaki tarayıcıda saklanır. Ekstra güvenlik için ara sıra bir dosyaya yedek alıp saklayabilir, gerektiğinde aynı dosyadan geri yükleyebilirsin.';
+    body.appendChild(info);
+
+    const row = document.createElement('div');
+    row.className = 'backup-row';
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'icon-btn wide';
+    exportBtn.textContent = 'Yedeği İndir';
+    exportBtn.addEventListener('click', exportBackup);
+
+    const importLabel = document.createElement('label');
+    importLabel.className = 'icon-btn wide';
+    importLabel.textContent = 'Dosyadan Geri Yükle';
+    importLabel.style.cursor = 'pointer';
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'application/json';
+    fileInput.style.display = 'none';
+    fileInput.addEventListener('change', (e) => {
+      if(e.target.files && e.target.files[0]) importBackupFile(e.target.files[0]);
+    });
+    importLabel.appendChild(fileInput);
+
+    row.appendChild(exportBtn);
+    row.appendChild(importLabel);
+    body.appendChild(row);
+  });
+}
+
+// ---------- Hesap / Bulut senkronu ----------
+function updateAccountUI(){
+  const btn = document.getElementById('accountBtn');
+  if(!btn) return;
+  if(currentUser){
+    btn.textContent = '🟢';
+    btn.title = 'Hesap: ' + currentUser.email;
+  } else {
+    btn.textContent = '👤';
+    btn.title = 'Hesap';
+  }
+}
+
+function applyRemoteData(data){
+  if(Array.isArray(data.goals)) goals = data.goals;
+  if(data.completions && typeof data.completions === 'object') completions = data.completions;
+  if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
+  try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){}
+  try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){}
+  try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){}
+  renderGrid();
+  renderStats();
+}
+
+function initCloudSync(){
+  if(!cloudEnabled){ updateAccountUI(); return; }
+  firebase.auth().onAuthStateChanged((user) => {
+    currentUser = user;
+    updateAccountUI();
+    if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
+    if(user){
+      const ref = firebase.firestore().collection('users').doc(user.uid);
+      ref.get().then((snap) => {
+        if(!snap.exists){
+          ref.set({ goals, completions, reminder });
+        }
+      });
+      firestoreUnsub = ref.onSnapshot((snap) => {
+        if(snap.exists) applyRemoteData(snap.data());
+      });
+    }
+  });
+}
+
+function openAccountModal(){
+  openModal('Hesap', (body) => {
+    if(!cloudEnabled){
+      const info = document.createElement('div');
+      info.className = 'modal-info';
+      info.textContent = 'Bulut senkronizasyonu henüz kurulmamış (dosyanın başındaki firebaseConfig alanı doldurulmalı). Şu an sadece bu cihazda saklanıyor.';
+      body.appendChild(info);
+      return;
+    }
+    if(currentUser){
+      const info = document.createElement('div');
+      info.className = 'modal-info';
+      info.textContent = 'Giriş yapıldı: ' + currentUser.email + '. Bu hesapla giriş yaptığın her cihazda aynı veriler görünür ve birbirini günceller.';
+      body.appendChild(info);
+      const outBtn = document.createElement('button');
+      outBtn.type = 'button';
+      outBtn.className = 'icon-btn wide';
+      outBtn.textContent = 'Çıkış Yap';
+      outBtn.addEventListener('click', () => { firebase.auth().signOut(); closeModal(); });
+      body.appendChild(outBtn);
+      return;
+    }
+    const info = document.createElement('div');
+    info.className = 'modal-info';
+    info.textContent = 'Aynı verileri hem telefonda hem bilgisayarda görmek için bir hesap aç ya da var olan hesabınla giriş yap.';
+    body.appendChild(info);
+
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.placeholder = 'E-posta';
+    emailInput.className = 'goal-name field-full';
+    body.appendChild(emailInput);
+
+    const passInput = document.createElement('input');
+    passInput.type = 'password';
+    passInput.placeholder = 'Şifre (en az 6 karakter)';
+    passInput.className = 'goal-name field-full';
+    passInput.style.marginTop = '8px';
+    body.appendChild(passInput);
+
+    const errBox = document.createElement('div');
+    errBox.className = 'modal-info';
+    errBox.style.color = 'var(--ember)';
+    body.appendChild(errBox);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'backup-row';
+
+    const loginBtn = document.createElement('button');
+    loginBtn.type = 'button';
+    loginBtn.className = 'icon-btn wide';
+    loginBtn.textContent = 'Giriş Yap';
+    loginBtn.addEventListener('click', () => {
+      errBox.textContent = '';
+      firebase.auth().signInWithEmailAndPassword(emailInput.value.trim(), passInput.value)
+        .then(() => closeModal())
+        .catch((e) => { errBox.textContent = 'Giriş başarısız: ' + e.message; });
+    });
+
+    const signupBtn = document.createElement('button');
+    signupBtn.type = 'button';
+    signupBtn.className = 'icon-btn wide';
+    signupBtn.textContent = 'Kayıt Ol';
+    signupBtn.addEventListener('click', () => {
+      errBox.textContent = '';
+      firebase.auth().createUserWithEmailAndPassword(emailInput.value.trim(), passInput.value)
+        .then(() => closeModal())
+        .catch((e) => { errBox.textContent = 'Kayıt başarısız: ' + e.message; });
+    });
+
+    btnRow.appendChild(loginBtn);
+    btnRow.appendChild(signupBtn);
+    body.appendChild(btnRow);
+  });
+}
+
+document.getElementById('goalsBtn').addEventListener('click', openGoalsModal);
+document.getElementById('reminderBtn').addEventListener('click', openReminderModal);
+document.getElementById('backupBtn').addEventListener('click', openBackupModal);
+document.getElementById('accountBtn').addEventListener('click', openAccountModal);
+
+// ---------- Takvim ----------
+const grid = document.getElementById('grid');
+function renderGrid(){
+  grid.innerHTML = '';
+  for(let m=0; m<12; m++){
+    const first = new Date(YEAR, m, 1);
+    const daysInMonth = new Date(YEAR, m+1, 0).getDate();
+    let startCol = first.getDay();
+    startCol = (startCol === 0) ? 6 : startCol - 1;
+
+    const monthDiv = document.createElement('div');
+    monthDiv.className = 'month';
+
+    let fullInMonth = 0;
+    for(let d=1; d<=daysInMonth; d++){
+      const ds = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(dayPercent(ds) === 100) fullInMonth++;
+    }
+
+    const h2 = document.createElement('h2');
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = monthNames[m];
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = `${fullInMonth}/${daysInMonth}`;
+    h2.appendChild(nameSpan);
+    h2.appendChild(countSpan);
+    monthDiv.appendChild(h2);
+
+    const table = document.createElement('table');
+    const thead = document.createElement('tr');
+    dayLetters.forEach(dl => { const th = document.createElement('th'); th.textContent = dl; thead.appendChild(th); });
+    table.appendChild(thead);
+
+    let row = document.createElement('tr');
+    for(let i=0;i<startCol;i++){
+      const td = document.createElement('td');
+      const filler = document.createElement('div');
+      filler.className = 'day filler';
+      td.appendChild(filler);
+      row.appendChild(td);
+    }
+    for(let d=1; d<=daysInMonth; d++){
+      const col = (startCol + d - 1) % 7;
+      if(col === 0 && d !== 1){ table.appendChild(row); row = document.createElement('tr'); }
+      const dateStr = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const td = document.createElement('td');
+      const div = document.createElement('div');
+      const percent = dayPercent(dateStr);
+
+      div.className = 'day' + (percent === 100 ? ' full' : '');
+      if(percent > 0 && percent < 100){
+        const deg = percent * 3.6;
+        div.style.background = `conic-gradient(var(--ember) 0deg ${deg}deg, transparent ${deg}deg 360deg)`;
+      } else if(percent === 0){
+        div.style.background = '';
+      }
+      div.title = (percent > 0 && percent < 100) ? (percent + '%') : '';
+
+      div.textContent = d;
+      if(dateStr === todayStr) div.classList.add('today');
+      div.addEventListener('contextmenu', (e) => { e.preventDefault(); openDayModal(dateStr); });
+      td.appendChild(div);
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+    monthDiv.appendChild(table);
+    grid.appendChild(monthDiv);
+  }
+}
+
+// ---------- İstatistikler ----------
+function calcStreaks(){
+  const fullDates = [];
+  let halfCount = 0, undoneCount = 0;
+  for(let m=0;m<12;m++){
+    const daysInMonth = new Date(YEAR, m+1, 0).getDate();
+    for(let d=1; d<=daysInMonth; d++){
+      const ds = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const info = dayInfo(ds);
+      if(info.percent === 100) fullDates.push(ds);
+      if(ds <= todayStr && info.hasGoals){
+        if(info.percent === 0) undoneCount++;
+        else if(info.percent < 100) halfCount++;
+      }
+    }
+  }
+  let best = 0, run = 0, prev = null;
+  for(const d of fullDates){
+    if(prev){
+      const diff = (new Date(d) - new Date(prev)) / 86400000;
+      run = (diff === 1) ? run + 1 : 1;
+    } else { run = 1; }
+    best = Math.max(best, run);
+    prev = d;
+  }
+  let c = 0;
+  let cursor = new Date(todayStr);
+  const fullSet = new Set(fullDates);
+  while(fullSet.has(cursor.toISOString().slice(0,10))){
+    c++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return { best, current: c, total: fullDates.length, half: halfCount, undone: undoneCount };
+}
+
+function renderStats(){
+  const s = calcStreaks();
+  document.getElementById('streakBest').textContent = s.best;
+  document.getElementById('totalDays').textContent = s.total;
+  document.getElementById('halfDays').textContent = s.half;
+  document.getElementById('undoneDays').textContent = s.undone;
+}
+
+// ---------- Hatırlatıcı döngüsü (sayfa açıkken) ----------
+function checkReminder(){
+  if(!reminder.enabled) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const cur = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const today = now.toISOString().slice(0,10);
+  if(cur === reminder.time && reminder.lastNotifiedDate !== today){
+    if(dayPercent(today) !== 100){
+      try{ new Notification('Zincirini kırma!', { body: 'Bugünü henüz işaretlemedin.' }); }catch(e){}
+    }
+    reminder.lastNotifiedDate = today;
+    saveReminder();
+  }
+}
+setInterval(checkReminder, 20000);
+
+// ---------- PWA: servis çalışanı (sadece http/https üzerinden çalışır) ----------
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+
+(function init(){
+  loadState();
+  renderGrid();
+  renderStats();
+  initCloudSync();
+})();
+</script>
+</body>
+</html>
