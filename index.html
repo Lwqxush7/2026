@@ -820,12 +820,12 @@ function checkReminder(){
 }
 setInterval(checkReminder, 20000);
 
-// ---------- PWA: servis çalışanı (sadece http/https üzerinden çalışır) ----------
-if('serviceWorker' in navigator && location.protocol !== 'file:'){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
-  });
-}
+// ---------- PWA: servis çalışanı devre dışı (OneSignal ile aynı kapsamda çakışma yapıyordu) ----------
+// if('serviceWorker' in navigator && location.protocol !== 'file:'){
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('service-worker.js').catch(() => {});
+//   });
+// }
 
 (function init(){
   loadState();
