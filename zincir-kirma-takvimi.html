@@ -13,15 +13,15 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>2026 Zinciri Kırma</title>
 
-<!--
+<!-- OneSignal: telefon kilitliyken / uygulama kapalıyken de bildirim için.
+     Aşağıdaki APP_ID_BURAYA yerine OneSignal panelinden aldığın App ID'yi yapıştır. -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(function (OneSignal) {
-    OneSignal.init({ appId: "APP_ID_BURAYA" });
+    OneSignal.init({ appId: "a823248a-8bfe-48c3-b6ed-96419313a1b4" });
   });
 </script>
---> 
 
 <!-- Firebase: PC ve telefon arasında aynı verileri görmek (hesapla giriş + bulut senkronu) için.
      Aşağıdaki alanları Firebase konsolundan aldığın kendi proje bilgilerinle doldur. -->
@@ -629,6 +629,7 @@ function initCloudSync(){
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
+        if(snap.metadata.hasPendingWrites) return; // kendi yazdığımız veriyi geri okuyup üzerine yazma
         if(snap.exists) applyRemoteData(snap.data());
       });
     }
@@ -659,55 +660,27 @@ function openAccountModal(){
     }
     const info = document.createElement('div');
     info.className = 'modal-info';
-    info.textContent = 'Aynı verileri hem telefonda hem bilgisayarda görmek için bir hesap aç ya da var olan hesabınla giriş yap.';
+    info.textContent = 'Aynı verileri hem telefonda hem bilgisayarda görmek için Google hesabınla giriş yap.';
     body.appendChild(info);
-
-    const emailInput = document.createElement('input');
-    emailInput.type = 'email';
-    emailInput.placeholder = 'E-posta';
-    emailInput.className = 'goal-name field-full';
-    body.appendChild(emailInput);
-
-    const passInput = document.createElement('input');
-    passInput.type = 'password';
-    passInput.placeholder = 'Şifre (en az 6 karakter)';
-    passInput.className = 'goal-name field-full';
-    passInput.style.marginTop = '8px';
-    body.appendChild(passInput);
 
     const errBox = document.createElement('div');
     errBox.className = 'modal-info';
     errBox.style.color = 'var(--ember)';
     body.appendChild(errBox);
 
-    const btnRow = document.createElement('div');
-    btnRow.className = 'backup-row';
-
-    const loginBtn = document.createElement('button');
-    loginBtn.type = 'button';
-    loginBtn.className = 'icon-btn wide';
-    loginBtn.textContent = 'Giriş Yap';
-    loginBtn.addEventListener('click', () => {
+    const googleBtn = document.createElement('button');
+    googleBtn.type = 'button';
+    googleBtn.className = 'icon-btn wide';
+    googleBtn.style.marginTop = '4px';
+    googleBtn.textContent = 'Google ile Giriş Yap';
+    googleBtn.addEventListener('click', () => {
       errBox.textContent = '';
-      firebase.auth().signInWithEmailAndPassword(emailInput.value.trim(), passInput.value)
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
         .then(() => closeModal())
         .catch((e) => { errBox.textContent = 'Giriş başarısız: ' + e.message; });
     });
-
-    const signupBtn = document.createElement('button');
-    signupBtn.type = 'button';
-    signupBtn.className = 'icon-btn wide';
-    signupBtn.textContent = 'Kayıt Ol';
-    signupBtn.addEventListener('click', () => {
-      errBox.textContent = '';
-      firebase.auth().createUserWithEmailAndPassword(emailInput.value.trim(), passInput.value)
-        .then(() => closeModal())
-        .catch((e) => { errBox.textContent = 'Kayıt başarısız: ' + e.message; });
-    });
-
-    btnRow.appendChild(loginBtn);
-    btnRow.appendChild(signupBtn);
-    body.appendChild(btnRow);
+    body.appendChild(googleBtn);
   });
 }
 
@@ -847,12 +820,12 @@ function checkReminder(){
 }
 setInterval(checkReminder, 20000);
 
-// ---------- PWA: servis çalışanı (sadece http/https üzerinden çalışır) ----------
-if('serviceWorker' in navigator && location.protocol !== 'file:'){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
-  });
-}
+// ---------- PWA: servis çalışanı devre dışı (OneSignal ile aynı kapsamda çakışma yapıyordu) ----------
+// if('serviceWorker' in navigator && location.protocol !== 'file:'){
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('service-worker.js').catch(() => {});
+//   });
+// }
 
 (function init(){
   loadState();
