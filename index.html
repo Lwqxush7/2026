@@ -629,6 +629,7 @@ function initCloudSync(){
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
+        if(snap.metadata.hasPendingWrites) return; // kendi yazdığımız veriyi geri okuyup üzerine yazma
         if(snap.exists) applyRemoteData(snap.data());
       });
     }
