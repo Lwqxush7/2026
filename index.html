@@ -13,8 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>2026 Zinciri Kırma</title>
 
-<!-- OneSignal: telefon kilitliyken / uygulama kapalıyken de bildirim için.
-     Aşağıdaki APP_ID_BURAYA yerine OneSignal panelinden aldığın App ID'yi yapıştır. -->
+<!--
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -22,6 +21,7 @@
     OneSignal.init({ appId: "APP_ID_BURAYA" });
   });
 </script>
+--> 
 
 <!-- Firebase: PC ve telefon arasında aynı verileri görmek (hesapla giriş + bulut senkronu) için.
      Aşağıdaki alanları Firebase konsolundan aldığın kendi proje bilgilerinle doldur. -->
@@ -617,9 +617,6 @@ function applyRemoteData(data){
 
 function initCloudSync(){
   if(!cloudEnabled){ updateAccountUI(); return; }
-  firebase.auth().getRedirectResult().catch((e) => {
-    console.error('Google giriş hatası:', e.code, e.message);
-  });
   firebase.auth().onAuthStateChanged((user) => {
     currentUser = user;
     updateAccountUI();
@@ -662,30 +659,55 @@ function openAccountModal(){
     }
     const info = document.createElement('div');
     info.className = 'modal-info';
-    info.textContent = 'Aynı verileri hem telefonda hem bilgisayarda görmek için Google hesabınla giriş yap.';
+    info.textContent = 'Aynı verileri hem telefonda hem bilgisayarda görmek için bir hesap aç ya da var olan hesabınla giriş yap.';
     body.appendChild(info);
+
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.placeholder = 'E-posta';
+    emailInput.className = 'goal-name field-full';
+    body.appendChild(emailInput);
+
+    const passInput = document.createElement('input');
+    passInput.type = 'password';
+    passInput.placeholder = 'Şifre (en az 6 karakter)';
+    passInput.className = 'goal-name field-full';
+    passInput.style.marginTop = '8px';
+    body.appendChild(passInput);
 
     const errBox = document.createElement('div');
     errBox.className = 'modal-info';
     errBox.style.color = 'var(--ember)';
     body.appendChild(errBox);
 
-    const googleBtn = document.createElement('button');
-    googleBtn.type = 'button';
-    googleBtn.className = 'icon-btn wide';
-    googleBtn.style.marginTop = '4px';
-    googleBtn.textContent = 'Google ile Giriş Yap';
-    googleBtn.addEventListener('click', () => {
+    const btnRow = document.createElement('div');
+    btnRow.className = 'backup-row';
+
+    const loginBtn = document.createElement('button');
+    loginBtn.type = 'button';
+    loginBtn.className = 'icon-btn wide';
+    loginBtn.textContent = 'Giriş Yap';
+    loginBtn.addEventListener('click', () => {
       errBox.textContent = '';
-      googleBtn.disabled = true;
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithRedirect(provider)
-        .catch((e) => {
-          errBox.textContent = 'Giriş başarısız: ' + e.message;
-          googleBtn.disabled = false;
-        });
+      firebase.auth().signInWithEmailAndPassword(emailInput.value.trim(), passInput.value)
+        .then(() => closeModal())
+        .catch((e) => { errBox.textContent = 'Giriş başarısız: ' + e.message; });
     });
-    body.appendChild(googleBtn);
+
+    const signupBtn = document.createElement('button');
+    signupBtn.type = 'button';
+    signupBtn.className = 'icon-btn wide';
+    signupBtn.textContent = 'Kayıt Ol';
+    signupBtn.addEventListener('click', () => {
+      errBox.textContent = '';
+      firebase.auth().createUserWithEmailAndPassword(emailInput.value.trim(), passInput.value)
+        .then(() => closeModal())
+        .catch((e) => { errBox.textContent = 'Kayıt başarısız: ' + e.message; });
+    });
+
+    btnRow.appendChild(loginBtn);
+    btnRow.appendChild(signupBtn);
+    body.appendChild(btnRow);
   });
 }
 
