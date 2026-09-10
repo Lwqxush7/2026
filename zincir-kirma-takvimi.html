@@ -286,6 +286,37 @@ footer{
 .day-brief-name{margin:4px 0 7px;color:#f1eee1;text-align:center;font-size:16px;}.day-brief-copy{max-width:330px;margin:0 auto;color:#adc0b1;text-align:center;font:12px/1.5 -apple-system,'Segoe UI',sans-serif;}
 .day-brief-note{margin:14px 0 0;color:#f1eee1;text-align:center;font-size:12px;font-style:italic;}.day-brief-source{margin-top:8px;color:#7f9987;text-align:center;font:10px/1.4 -apple-system,'Segoe UI',sans-serif;}
 @media (max-width:620px){.day-brief-body{grid-template-columns:1fr;}.day-brief-goals{padding:4px 0 16px;}.day-brief-story{border-left:0;border-top:1px solid #38523d;padding:16px 0 0;}}
+/* Sağ tık gün özeti için içerik ve görsel ayarları */
+.day-brief-box{ background:var(--bg); border-color:var(--panel-line); }
+.day-brief-box .modal-head{ border-color:var(--panel-line); }
+.day-brief-goals .goal-item{ border-color:var(--panel-line); }
+.day-brief-story{ border-color:var(--panel-line); }
+.day-brief-photos{ gap:16px; margin:10px 0 14px; }
+.day-brief-photo-wrap{ width:132px; }
+.day-brief-photo{
+  width:124px; height:124px; border-radius:3px; border-color:var(--panel-line);
+  object-position:center; box-shadow:0 7px 16px rgba(0,0,0,.22);
+}
+.day-brief-photo.after{ border-color:var(--gold); }
+.day-brief-photo.split-photo.before{ object-position:left center; }
+.day-brief-photo.split-photo.after{ object-position:right center; }
+.day-brief-arrow{ margin-top:-20px; }
+.day-brief-name{ font-size:19px; margin:2px 0 10px; }
+.day-brief-copy{ max-width:390px; }
+.day-brief-history{
+  margin:13px auto 12px; padding:0 0 0 19px; max-width:420px;
+  color:#adc0b1; font:11.5px/1.5 -apple-system,'Segoe UI',sans-serif;
+}
+.day-brief-history li{ margin:0 0 5px; padding-left:2px; }
+.day-brief-important-caption{ margin:12px 0 4px; text-align:center; }
+.day-brief-note{ margin-top:3px; }
+@media (max-width:620px){
+  .day-brief-photo-wrap{ width:112px; }
+  .day-brief-photo{ width:104px; height:104px; }
+  .day-brief-history{ font-size:11px; }
+}
+
+
 </style>
 </head>
 <body>
@@ -411,29 +442,220 @@ function openModal(titleText, buildBody, boxVariant = ''){
   document.addEventListener('keydown', escHandler);
 }
 
-const dailyInspiration = [
-  { quote:'“Küçük, tutarlı adımlar; büyük değişimlerin başlangıcıdır.”', title:'Bugünün odağı', copy:'Bugün tamamladığın her küçük hedef, yarınki rutininin daha güçlü bir parçası olur.', note:'Asıl başarı, yeniden başlamaktan korkmamaktır.', before:'https://images.unsplash.com/photo-1649710025212-5b63cda94759?auto=format&fit=crop&w=240&q=80', after:'https://images.unsplash.com/photo-1535021766333-fc75c9ab1d62?auto=format&fit=crop&w=240&q=80' },
-  { quote:'“Motivasyon başlatır; alışkanlık devam ettirir.”', title:'Bir adım daha', copy:'Planına dönmek için mükemmel zamanı bekleme. Bir sonraki küçük adımı şimdi seç.', note:'İstikrar, hedeflere verilen en net cevaptır.', before:'https://images.unsplash.com/photo-1574629173115-01ba37282238?auto=format&fit=crop&w=240&q=80', after:'https://images.unsplash.com/photo-1679216129631-fbcec034558c?auto=format&fit=crop&w=240&q=80' },
-  { quote:'“Her gün, kendine verdiğin sözü tutmak için yeni bir fırsattır.”', title:'Kendine yatırım', copy:'İlerlemen başkalarıyla değil, dünkü halinle kurduğun bağla ölçülür.', note:'Yavaş ilerlemek, durmaktan çok daha değerlidir.', before:'https://images.unsplash.com/photo-1610050731821-f58da5e8abc6?auto=format&fit=crop&w=240&q=80', after:'https://images.unsplash.com/photo-1614660762109-bb0157fcbd7d?auto=format&fit=crop&w=240&q=80' }
+const featuredStories = [
+  {
+    name: "Henry Ford",
+    before: "https://photo.znews.vn/w660/Uploaded/lce_jwqqc/2019_10_12/collage_photocat_1.jpg",
+    after: "https://photo.znews.vn/w660/Uploaded/lce_jwqqc/2019_10_12/collage_photocat_1.jpg",
+    split: true,
+    summary: "Makinelere meraklı bir çiftlik çocuğuyken, otomobili erişilebilir kılan sanayi öncülerinden birine dönüştü.",
+    challenges: [
+      "Detroit Automobile Company, pahalı ve verimsiz otomobiller ürettiği için kısa sürede kapandı.",
+      "İlk girişimindeki başarısızlıktan sonra tasarımını, maliyetini ve üretim sürecini yeniden kurdu.",
+      "1903’te Ford Motor Company’yi kurarak tek bir ürüne odaklandı: Model T.",
+      "Hareketli montaj hattı sayesinde otomobil üretimini geniş kitlelere ulaşabilecek ölçüde hızlandırdı."
+    ],
+    quote: "“Whether you think you can, or you think you can’t—you’re right.”"
+  },
+  {
+    name: "Elon Musk",
+    before: "https://cafebiz.cafebizcdn.vn/162123310254002176/2022/10/3/1660135633maxresdefault-1664768983896-166476898396894574709.jpg",
+    after: "https://upload.wikimedia.org/wikipedia/commons/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg",
+    summary: "Yazılımla başlayan girişimcilik yolunu, tekrar kullanılabilir roket hedefiyle uzay teknolojisine taşıdı.",
+    challenges: [
+      "İlk üç Falcon 1 fırlatması başarısız oldu; şirket 2008’de finansal olarak çok zorlandı.",
+      "Dördüncü Falcon 1 denemesi yörüngeye ulaştı ve SpaceX için dönüm noktası oldu.",
+      "SpaceX, uzaya erişim maliyetini düşürmek için yeniden kullanılabilir roketler üzerine ısrarla çalıştı.",
+      "Bugün şirket; uydu, kargo ve insanlı uzay uçuşları yapan büyük bir uzay teknolojisi kuruluşu."
+    ],
+    quote: "“When something is important enough, you do it even if the odds are not in your favor.”"
+  },
+  {
+    name: "J. K. Rowling",
+    before: "https://wl-incrivel.cf.tsp.li/resize/728x/jpg/f01/0b9/3ee0155736b44bbaf7232042b6.jpg",
+    after: "https://wl-incrivel.cf.tsp.li/resize/728x/jpg/f01/0b9/3ee0155736b44bbaf7232042b6.jpg",
+    split: true,
+    summary: "Bir roman fikrini yıllarca taşıdı; ret mektuplarına rağmen yazmayı bırakmadı.",
+    challenges: [
+      "Harry Potter taslağını öğretmenlik yaptığı dönemde ve maddi belirsizlik içindeyken tamamladı.",
+      "İlk kitabı birçok yayınevinden ret aldı; hikâyesini yeniden yazmaya devam etti.",
+      "Bloomsbury, 1996’da kitabı yayımlamayı kabul etti.",
+      "Seri, dünyanın en çok okunan çocuk ve gençlik edebiyatı çalışmalarından birine dönüştü."
+    ],
+    quote: "“Rock bottom became the solid foundation on which I rebuilt my life.”"
+  },
+  {
+    name: "Madam C. J. Walker",
+    before: "https://upload.wikimedia.org/wikipedia/commons/9/98/Madam_CJ_Walker_face_circa_1914.jpg",
+    after: "https://hips.hearstapps.com/hmg-prod/images/madamcj1-1585002520.png?crop=0.502xw%3A1.00xh%3B0%2C0&resize=1200%3A%2A",
+    summary: "Çamaşırcılıktan başlayan hayatını, binlerce kadına iş sağlayan bir girişime dönüştürdü.",
+    challenges: [
+      "Çocuk yaşta yetim kaldı; geçimini sağlamak için uzun süre çamaşırcılık yaptı.",
+      "Saç derisi sorununa çözüm ararken kendi ürününü geliştirdi.",
+      "1908’de eğitim merkezi ve üretim işini büyütecek yapıyı kurmaya başladı.",
+      "Walker Agents ağıyla kadınları eğitti, istihdam etti ve kazancını hayır işlerine de aktardı."
+    ],
+    quote: "“I had to make my own living and my own opportunity.”"
+  },
+  {
+    name: "Steve Jobs",
+    before: "https://genk.mediacdn.vn/139269124445442048/2021/1/15/jobses-16106870273891106031877.jpeg",
+    after: "https://genk.mediacdn.vn/139269124445442048/2021/1/15/jobses-16106870273891106031877.jpeg",
+    split: true,
+    summary: "Üniversiteyi bırakmasına ve kurduğu şirketten ayrılmasına rağmen tasarım odaklı teknoloji fikrinden vazgeçmedi.",
+    challenges: [
+      "Reed College’dan ayrıldıktan sonra ilgisini çeken dersleri takip etmeye devam etti.",
+      "1976’da Apple’ı kurdu; ilk yıllarda sınırlı kaynaklarla kişisel bilgisayar üretmeye çalıştı.",
+      "1985’te Apple’dan ayrılmak zorunda kaldı ve NeXT’i kurdu.",
+      "Apple’a döndükten sonra iMac, iPod ve iPhone gibi ürünlerle şirketin yönünü yeniden belirledi."
+    ],
+    quote: "“The people who are crazy enough to think they can change the world are the ones who do.”"
+  },
+  {
+    name: "Oprah Winfrey",
+    before: "https://cdn.amomama.com/4f1329bbe5092c17125ca98fe1032e6f5802d4645413d9f3a342805ea0487ffb.jpg",
+    after: "https://cdn.amomama.com/4f1329bbe5092c17125ca98fe1032e6f5802d4645413d9f3a342805ea0487ffb.jpg",
+    split: true,
+    summary: "Yerel yayıncılıktan başlayıp, görüşme formatını küresel bir medya markasına çevirdi.",
+    challenges: [
+      "Yoksulluk içinde büyüdü ve eğitimini sürdürmek için burslardan yararlandı.",
+      "Yerel radyo ve televizyonda çalışarak sunuculuk deneyimi kazandı.",
+      "1984’te Chicago’daki sabah programını devraldı ve program kısa sürede zirveye çıktı.",
+      "The Oprah Winfrey Show ve OWN ile medya, yayıncılık ve hayırseverlik alanlarında kalıcı bir etki yarattı."
+    ],
+    quote: "“Turn your wounds into wisdom.”"
+  },
+  {
+    name: "Cristiano Ronaldo",
+    before: "https://i2.prth.gr/files/2014/06/25/soccer-stars-then-and-now-ronaldo.jpg",
+    after: "https://i2.prth.gr/files/2014/06/25/soccer-stars-then-and-now-ronaldo.jpg",
+    split: true,
+    summary: "Madeira’dan ayrılıp genç yaşta akademiye katıldı; disiplinini yıllar boyunca üst seviyede korudu.",
+    challenges: [
+      "Çalışan sınıf bir ailede büyüdü ve 12 yaşında Sporting’in akademisi için Madeira’dan ayrıldı.",
+      "Genç yaşta sakatlık ve yoğun rekabetle mücadele ederek antrenman düzenini sürdürdü.",
+      "Sporting’den Manchester United’a geçerek Avrupa’nın en zorlu liglerinden birinde kendini kanıtladı.",
+      "Kulüp ve milli takım düzeyinde kazandığı kupalarla futbol tarihinin en üretken oyuncularından biri oldu."
+    ],
+    quote: "“Your love makes me strong. Your hate makes me unstoppable.”"
+  },
+  {
+    name: "Walt Disney",
+    before: "https://kathrynwarmstrong.wordpress.com/wp-content/uploads/2019/06/the_man_behind_the_myth__.jpg?w=685",
+    after: "https://kathrynwarmstrong.wordpress.com/wp-content/uploads/2019/06/the_man_behind_the_myth__.jpg?w=685",
+    split: true,
+    summary: "İlk stüdyosunun iflasından sonra karakter ve hikâye anlatımına yeniden başladı.",
+    challenges: [
+      "İlk animasyon stüdyosu Laugh-O-Gram iflas etti; Kansas City’den ayrılmak zorunda kaldı.",
+      "Oswald the Lucky Rabbit karakterinin haklarını kaybetmesiyle yeni bir başlangıç yaptı.",
+      "Mickey Mouse ile sesli animasyon döneminin öne çıkan çalışmalarından birini üretti.",
+      "Uzun metraj animasyon ve tema parkı fikriyle eğlence endüstrisinde yeni bir ölçek oluşturdu."
+    ],
+    quote: "“All our dreams can come true, if we have the courage to pursue them.”"
+  }
 ];
+
 function openDayModal(dateStr){
-  const wd=weekdayIndex(dateStr), applicable=goals.filter(g=>g.name.trim()!==''&&g.days.includes(wd));
-  const [y,m,d]=dateStr.split('-'), inspiration=dailyInspiration[(Number(d)+Number(m))%dailyInspiration.length];
-  openModal(`${d}.${m}.${y}`,body=>{
-    body.className='day-brief-body';
-    const goalsColumn=document.createElement('section');goalsColumn.className='day-brief-goals';
-    const kicker=document.createElement('span');kicker.className='day-brief-kicker';kicker.textContent='GÜNÜN HEDEFLERİ';goalsColumn.appendChild(kicker);
-    if(!applicable.length){const p=document.createElement('div');p.className='modal-empty';p.textContent='Bu gün için hedef yok. ⋮ menüsünden hedef ekleyip bu günü seçebilirsin.';goalsColumn.appendChild(p);}
-    else {const done=new Set(completions[dateStr]||[]);applicable.forEach((g,i)=>{const row=document.createElement('label');row.className='goal-item';const num=document.createElement('span');num.className='num';num.textContent=(i+1)+'.';const cb=document.createElement('input');cb.type='checkbox';cb.checked=done.has(g.id);cb.addEventListener('change',()=>toggleGoalCompletion(dateStr,g.id,cb.checked));const span=document.createElement('span');span.className='goal-item-name';span.textContent=g.name;row.append(num,cb,span);goalsColumn.appendChild(row);});}
-    const story=document.createElement('section');story.className='day-brief-story';
-    const qc=document.createElement('span');qc.className='day-brief-caption';qc.textContent='GÜNÜN SÖZÜ';const quote=document.createElement('p');quote.className='day-brief-quote';quote.textContent=inspiration.quote;
-    const sc=document.createElement('span');sc.className='day-brief-caption';sc.textContent='GÜNÜN İLHAM PANOSU';const photos=document.createElement('div');photos.className='day-brief-photos';
-    const makePhoto=(url,label,after)=>{const wrap=document.createElement('div');wrap.className='day-brief-photo-wrap';const img=document.createElement('img');img.className='day-brief-photo'+(after?' after':'');img.src=url;img.alt=label+' — gerçek fotoğraf';img.loading='lazy';const cap=document.createElement('div');cap.className='day-brief-photo-label';cap.textContent=label;wrap.append(img,cap);return wrap;};
-    photos.append(makePhoto(inspiration.before,'BAŞLANGIÇ',false));const arrow=document.createElement('div');arrow.className='day-brief-arrow';arrow.textContent='→';photos.appendChild(arrow);photos.append(makePhoto(inspiration.after,'İLERLEME',true));
-    const name=document.createElement('h3');name.className='day-brief-name';name.textContent=inspiration.title;const copy=document.createElement('p');copy.className='day-brief-copy';copy.textContent=inspiration.copy;const note=document.createElement('p');note.className='day-brief-note';note.textContent=inspiration.note;const source=document.createElement('div');source.className='day-brief-source';source.textContent='Görseller: Unsplash’tan gerçek fotoğraflar';
-    story.append(qc,quote,sc,photos,name,copy,note,source);body.append(goalsColumn,story);
-  },'day-brief-box');
+  const wd = weekdayIndex(dateStr);
+  const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
+  const [y,m,d] = dateStr.split('-');
+  const story = featuredStories[(Number(d) + Number(m) * 3) % featuredStories.length];
+
+  openModal(`${d}.${m}.${y}`, (body) => {
+    body.className = 'day-brief-body';
+
+    const goalsColumn = document.createElement('section');
+    goalsColumn.className = 'day-brief-goals';
+    const goalsKicker = document.createElement('span');
+    goalsKicker.className = 'day-brief-kicker';
+    goalsKicker.textContent = 'GÜNÜN HEDEFLERİ';
+    goalsColumn.appendChild(goalsKicker);
+
+    if(applicable.length === 0){
+      const p = document.createElement('div');
+      p.className = 'modal-empty';
+      p.textContent = 'Bu gün için hedef yok. ⋮ menüsünden hedef ekleyip bu günü seçebilirsin.';
+      goalsColumn.appendChild(p);
+    } else {
+      const done = new Set(completions[dateStr] || []);
+      applicable.forEach((g, i) => {
+        const row = document.createElement('label');
+        row.className = 'goal-item';
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = (i + 1) + '.';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = done.has(g.id);
+        cb.addEventListener('change', () => toggleGoalCompletion(dateStr, g.id, cb.checked));
+        const span = document.createElement('span');
+        span.className = 'goal-item-name';
+        span.textContent = g.name;
+        row.append(num, cb, span);
+        goalsColumn.appendChild(row);
+      });
+    }
+
+    const storyColumn = document.createElement('section');
+    storyColumn.className = 'day-brief-story';
+    const heading = document.createElement('span');
+    heading.className = 'day-brief-caption';
+    heading.textContent = 'THE BEST IN THE WORLD';
+    const motto = document.createElement('p');
+    motto.className = 'day-brief-quote';
+    motto.textContent = '“Bir yola baş koyduysan ve söz verdiysen, ölürsün ama yine de geri dönmezsin.”';
+    const name = document.createElement('h3');
+    name.className = 'day-brief-name';
+    name.textContent = story.name;
+
+    const photos = document.createElement('div');
+    photos.className = 'day-brief-photos';
+    const makePhoto = (url, label, variant) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'day-brief-photo-wrap';
+      const img = document.createElement('img');
+      img.className = 'day-brief-photo ' + variant + (story.split ? ' split-photo' : '');
+      img.src = url;
+      img.alt = story.name + ' — ' + label + ' gerçek fotoğraf';
+      img.loading = 'lazy';
+      const caption = document.createElement('div');
+      caption.className = 'day-brief-photo-label';
+      caption.textContent = label;
+      wrap.append(img, caption);
+      return wrap;
+    };
+    photos.append(makePhoto(story.before, 'BAŞLANGIÇ', 'before'));
+    const arrow = document.createElement('div');
+    arrow.className = 'day-brief-arrow';
+    arrow.textContent = '→';
+    photos.appendChild(arrow);
+    photos.append(makePhoto(story.after, 'BUGÜN', 'after'));
+
+    const summary = document.createElement('p');
+    summary.className = 'day-brief-copy';
+    summary.textContent = story.summary;
+    const list = document.createElement('ul');
+    list.className = 'day-brief-history';
+    story.challenges.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      list.appendChild(li);
+    });
+    const quoteCaption = document.createElement('span');
+    quoteCaption.className = 'day-brief-caption day-brief-important-caption';
+    quoteCaption.textContent = 'EN ÖNEMLİ SÖZÜ';
+    const importantQuote = document.createElement('p');
+    importantQuote.className = 'day-brief-note';
+    importantQuote.textContent = story.quote;
+    const source = document.createElement('div');
+    source.className = 'day-brief-source';
+    source.textContent = 'Görseller: gerçek arşiv ve editoryal fotoğraflar';
+
+    storyColumn.append(heading, motto, name, photos, summary, list, quoteCaption, importantQuote, source);
+    body.append(goalsColumn, storyColumn);
+  }, 'day-brief-box');
 }
+
 function openGoalsModal(){
   openModal('12 Hedef', (body) => {
     const info = document.createElement('div');
