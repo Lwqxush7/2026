@@ -272,6 +272,48 @@ footer{
   padding-top: 14px;
   line-height: 1.6;
 }
+
+/* ---- Gün hedef özeti: sağ tık penceresi ---- */
+.day-brief-box{
+  width:min(760px, 100%);
+  padding:20px;
+  overflow:hidden;
+  border-color:#395440;
+  background:#173022;
+}
+.day-brief-box .modal-head{ margin-bottom:14px; border-color:#38523d; }
+.day-brief-box .modal-title{ font-size:18px; font-weight:600; }
+.day-brief-body{ display:grid; grid-template-columns:minmax(220px, .9fr) minmax(320px, 1.1fr); min-height:300px; }
+.day-brief-goals{ padding:4px 20px 4px 0; }
+.day-brief-kicker, .day-brief-caption{
+  display:block; color:#8fa798; font:10px/1.2 -apple-system,'Segoe UI',sans-serif;
+  letter-spacing:1px; margin-bottom:10px;
+}
+.day-brief-goals .goal-item{ padding:11px 4px; border-color:#38523d; }
+.day-brief-goals .goal-item input[type=checkbox]{ accent-color:#ef8b4d; }
+.day-brief-story{ border-left:1px solid #38523d; padding:4px 0 0 20px; }
+.day-brief-quote{
+  margin:0 0 18px; color:#edbd32; font-size:15px; font-style:italic; line-height:1.45;
+}
+.day-brief-photos{ display:flex; align-items:center; justify-content:center; gap:12px; margin:8px 0 10px; }
+.day-brief-photo-wrap{ width:96px; text-align:center; }
+.day-brief-photo{
+  display:block; width:76px; height:76px; margin:0 auto 7px; border-radius:50%;
+  object-fit:cover; border:2px solid #38523d; background:#284738;
+}
+.day-brief-photo.after{ border-color:#e2b435; }
+.day-brief-arrow{ color:#91a89a; font:20px/1 sans-serif; margin-top:-19px; }
+.day-brief-photo-label{ color:#8fa798; font:9px/1.2 -apple-system,'Segoe UI',sans-serif; letter-spacing:.7px; }
+.day-brief-name{ margin:4px 0 7px; color:#f1eee1; text-align:center; font-size:16px; }
+.day-brief-copy{ max-width:330px; margin:0 auto; color:#adc0b1; text-align:center; font:12px/1.5 -apple-system,'Segoe UI',sans-serif; }
+.day-brief-note{ margin:14px 0 0; color:#f1eee1; text-align:center; font-size:12px; font-style:italic; }
+.day-brief-source{ margin-top:8px; color:#7f9987; text-align:center; font:10px/1.4 -apple-system,'Segoe UI',sans-serif; }
+@media (max-width:620px){
+  .day-brief-body{ grid-template-columns:1fr; }
+  .day-brief-goals{ padding:4px 0 16px; }
+  .day-brief-story{ border-left:0; border-top:1px solid #38523d; padding:16px 0 0; }
+}
+
 </style>
 </head>
 <body>
@@ -370,13 +412,13 @@ function closeModal(){
   document.removeEventListener('keydown', escHandler);
 }
 function escHandler(e){ if(e.key === 'Escape') closeModal(); }
-function openModal(titleText, buildBody){
+function openModal(titleText, buildBody, boxVariant = ''){
   closeModal();
   overlayEl = document.createElement('div');
   overlayEl.className = 'modal-overlay';
   overlayEl.addEventListener('click', (e) => { if(e.target === overlayEl) closeModal(); });
   const box = document.createElement('div');
-  box.className = 'modal-box';
+  box.className = 'modal-box' + (boxVariant ? ' ' + boxVariant : '');
   const head = document.createElement('div');
   head.className = 'modal-head';
   const t = document.createElement('div');
@@ -397,38 +439,125 @@ function openModal(titleText, buildBody){
   document.addEventListener('keydown', escHandler);
 }
 
+const dailyInspiration = [
+  {
+    quote: '“Küçük, tutarlı adımlar; büyük değişimlerin başlangıcıdır.”',
+    title: 'Bugünün odağı',
+    copy: 'Bugün tamamladığın her küçük hedef, yarınki rutininin daha güçlü bir parçası olur.',
+    note: 'Asıl başarı, yeniden başlamaktan korkmamaktır.',
+    before: 'https://images.unsplash.com/photo-1649710025212-5b63cda94759?auto=format&fit=crop&w=240&q=80',
+    after: 'https://images.unsplash.com/photo-1535021766333-fc75c9ab1d62?auto=format&fit=crop&w=240&q=80'
+  },
+  {
+    quote: '“Motivasyon başlatır; alışkanlık devam ettirir.”',
+    title: 'Bir adım daha',
+    copy: 'Planına dönmek için mükemmel zamanı bekleme. Bir sonraki küçük adımı şimdi seç.',
+    note: 'İstikrar, hedeflere verilen en net cevaptır.',
+    before: 'https://images.unsplash.com/photo-1574629173115-01ba37282238?auto=format&fit=crop&w=240&q=80',
+    after: 'https://images.unsplash.com/photo-1679216129631-fbcec034558c?auto=format&fit=crop&w=240&q=80'
+  },
+  {
+    quote: '“Her gün, kendine verdiğin sözü tutmak için yeni bir fırsattır.”',
+    title: 'Kendine yatırım',
+    copy: 'İlerlemen başkalarıyla değil, dünkü halinle kurduğun bağla ölçülür.',
+    note: 'Yavaş ilerlemek, durmaktan çok daha değerlidir.',
+    before: 'https://images.unsplash.com/photo-1610050731821-f58da5e8abc6?auto=format&fit=crop&w=240&q=80',
+    after: 'https://images.unsplash.com/photo-1614660762109-bb0157fcbd7d?auto=format&fit=crop&w=240&q=80'
+  }
+];
+
 function openDayModal(dateStr){
   const wd = weekdayIndex(dateStr);
   const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
   const [y,m,d] = dateStr.split('-');
+  const inspiration = dailyInspiration[(Number(d) + Number(m)) % dailyInspiration.length];
+
   openModal(`${d}.${m}.${y}`, (body) => {
+    body.className = 'day-brief-body';
+
+    const goalsColumn = document.createElement('section');
+    goalsColumn.className = 'day-brief-goals';
+    const goalsKicker = document.createElement('span');
+    goalsKicker.className = 'day-brief-kicker';
+    goalsKicker.textContent = 'GÜNÜN HEDEFLERİ';
+    goalsColumn.appendChild(goalsKicker);
+
     if(applicable.length === 0){
       const p = document.createElement('div');
       p.className = 'modal-empty';
-      p.textContent = 'Bu gün için hedef yok. Yukarıdaki ⋮ ile hedef ekleyip bu günü seçebilirsin.';
-      body.appendChild(p);
-      return;
+      p.textContent = 'Bu gün için hedef yok. ⋮ menüsünden hedef ekleyip bu günü seçebilirsin.';
+      goalsColumn.appendChild(p);
+    } else {
+      const done = new Set(completions[dateStr] || []);
+      applicable.forEach((g, i) => {
+        const row = document.createElement('label');
+        row.className = 'goal-item';
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = (i + 1) + '.';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = done.has(g.id);
+        cb.addEventListener('change', () => toggleGoalCompletion(dateStr, g.id, cb.checked));
+        const span = document.createElement('span');
+        span.className = 'goal-item-name';
+        span.textContent = g.name;
+        row.append(num, cb, span);
+        goalsColumn.appendChild(row);
+      });
     }
-    const done = new Set(completions[dateStr] || []);
-    applicable.forEach((g, i) => {
-      const row = document.createElement('label');
-      row.className = 'goal-item';
-      const num = document.createElement('span');
-      num.className = 'num';
-      num.textContent = (i+1) + '.';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = done.has(g.id);
-      cb.addEventListener('change', () => toggleGoalCompletion(dateStr, g.id, cb.checked));
-      const span = document.createElement('span');
-      span.className = 'goal-item-name';
-      span.textContent = g.name;
-      row.appendChild(num);
-      row.appendChild(cb);
-      row.appendChild(span);
-      body.appendChild(row);
-    });
-  });
+
+    const story = document.createElement('section');
+    story.className = 'day-brief-story';
+    const quoteCaption = document.createElement('span');
+    quoteCaption.className = 'day-brief-caption';
+    quoteCaption.textContent = 'GÜNÜN SÖZÜ';
+    const quote = document.createElement('p');
+    quote.className = 'day-brief-quote';
+    quote.textContent = inspiration.quote;
+    const storyCaption = document.createElement('span');
+    storyCaption.className = 'day-brief-caption';
+    storyCaption.textContent = 'GÜNÜN İLHAM PANOSU';
+    const photos = document.createElement('div');
+    photos.className = 'day-brief-photos';
+
+    const makePhoto = (url, label, after) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'day-brief-photo-wrap';
+      const img = document.createElement('img');
+      img.className = 'day-brief-photo' + (after ? ' after' : '');
+      img.src = url;
+      img.alt = label + ' — gerçek fotoğraf';
+      img.loading = 'lazy';
+      const caption = document.createElement('div');
+      caption.className = 'day-brief-photo-label';
+      caption.textContent = label;
+      wrap.append(img, caption);
+      return wrap;
+    };
+    photos.append(makePhoto(inspiration.before, 'BAŞLANGIÇ', false));
+    const arrow = document.createElement('div');
+    arrow.className = 'day-brief-arrow';
+    arrow.textContent = '→';
+    photos.appendChild(arrow);
+    photos.append(makePhoto(inspiration.after, 'İLERLEME', true));
+
+    const name = document.createElement('h3');
+    name.className = 'day-brief-name';
+    name.textContent = inspiration.title;
+    const copy = document.createElement('p');
+    copy.className = 'day-brief-copy';
+    copy.textContent = inspiration.copy;
+    const note = document.createElement('p');
+    note.className = 'day-brief-note';
+    note.textContent = inspiration.note;
+    const source = document.createElement('div');
+    source.className = 'day-brief-source';
+    source.textContent = 'Görseller: Unsplash’tan gerçek fotoğraflar';
+
+    story.append(quoteCaption, quote, storyCaption, photos, name, copy, note, source);
+    body.append(goalsColumn, story);
+  }, 'day-brief-box');
 }
 
 function openGoalsModal(){
