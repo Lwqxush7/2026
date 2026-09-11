@@ -274,18 +274,47 @@ footer{
 }
 
 /* ---- Gün hedef özeti: sağ tık penceresi ---- */
-.day-brief-box{width:min(760px, 100%);padding:20px;overflow:hidden;border-color:#395440;background:#173022;}
-.day-brief-box .modal-head{margin-bottom:14px;border-color:#38523d;}.day-brief-box .modal-title{font-size:18px;font-weight:600;}
-.day-brief-body{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(320px,1.1fr);min-height:300px;}
-.day-brief-goals{padding:4px 20px 4px 0;}.day-brief-kicker,.day-brief-caption{display:block;color:#8fa798;font:10px/1.2 -apple-system,'Segoe UI',sans-serif;letter-spacing:1px;margin-bottom:10px;}
-.day-brief-goals .goal-item{padding:11px 4px;border-color:#38523d;}.day-brief-goals .goal-item input[type=checkbox]{accent-color:#ef8b4d;}
-.day-brief-story{border-left:1px solid #38523d;padding:4px 0 0 20px;}.day-brief-quote{margin:0 0 18px;color:#edbd32;font-size:15px;font-style:italic;line-height:1.45;}
-.day-brief-photos{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 10px;}.day-brief-photo-wrap{width:96px;text-align:center;}
-.day-brief-photo{display:block;width:76px;height:76px;margin:0 auto 7px;border-radius:50%;object-fit:cover;border:2px solid #38523d;background:#284738;}.day-brief-photo.after{border-color:#e2b435;}
-.day-brief-arrow{color:#91a89a;font:20px/1 sans-serif;margin-top:-19px;}.day-brief-photo-label{color:#8fa798;font:9px/1.2 -apple-system,'Segoe UI',sans-serif;letter-spacing:.7px;}
-.day-brief-name{margin:4px 0 7px;color:#f1eee1;text-align:center;font-size:16px;}.day-brief-copy{max-width:330px;margin:0 auto;color:#adc0b1;text-align:center;font:12px/1.5 -apple-system,'Segoe UI',sans-serif;}
-.day-brief-note{margin:14px 0 0;color:#f1eee1;text-align:center;font-size:12px;font-style:italic;}.day-brief-source{margin-top:8px;color:#7f9987;text-align:center;font:10px/1.4 -apple-system,'Segoe UI',sans-serif;}
-@media (max-width:620px){.day-brief-body{grid-template-columns:1fr;}.day-brief-goals{padding:4px 0 16px;}.day-brief-story{border-left:0;border-top:1px solid #38523d;padding:16px 0 0;}}
+.day-brief-box{
+  width:min(760px, 100%);
+  padding:20px;
+  overflow:hidden;
+  border-color:#395440;
+  background:#173022;
+}
+.day-brief-box .modal-head{ margin-bottom:14px; border-color:#38523d; }
+.day-brief-box .modal-title{ font-size:18px; font-weight:600; }
+.day-brief-body{ display:grid; grid-template-columns:minmax(220px, .9fr) minmax(320px, 1.1fr); min-height:300px; }
+.day-brief-goals{ padding:4px 20px 4px 0; }
+.day-brief-kicker, .day-brief-caption{
+  display:block; color:#8fa798; font:10px/1.2 -apple-system,'Segoe UI',sans-serif;
+  letter-spacing:1px; margin-bottom:10px;
+}
+.day-brief-goals .goal-item{ padding:11px 4px; border-color:#38523d; }
+.day-brief-goals .goal-item input[type=checkbox]{ accent-color:#ef8b4d; }
+.day-brief-story{ border-left:1px solid #38523d; padding:4px 0 0 20px; }
+.day-brief-quote{
+  margin:0 0 18px; color:#edbd32; font-size:15px; font-style:italic; line-height:1.45;
+}
+.day-brief-photos{ display:flex; align-items:center; justify-content:center; gap:12px; margin:8px 0 10px; }
+.day-brief-photo-wrap{ width:96px; text-align:center; }
+.day-brief-photo{
+  display:block; width:76px; height:76px; margin:0 auto 7px; border-radius:50%;
+  object-fit:cover; border:2px solid #38523d; background:#284738;
+}
+.day-brief-photo.after{ border-color:#e2b435; }
+.day-brief-arrow{ color:#91a89a; font:20px/1 sans-serif; margin-top:-19px; }
+.day-brief-photo-label{ color:#8fa798; font:9px/1.2 -apple-system,'Segoe UI',sans-serif; letter-spacing:.7px; }
+.day-brief-name{ margin:4px 0 7px; color:#f1eee1; text-align:center; font-size:16px; }
+.day-brief-copy{ max-width:330px; margin:0 auto; color:#adc0b1; text-align:center; font:12px/1.5 -apple-system,'Segoe UI',sans-serif; }
+.day-brief-note{ margin:14px 0 0; color:#f1eee1; text-align:center; font-size:12px; font-style:italic; }
+.day-brief-source{ margin-top:8px; color:#7f9987; text-align:center; font:10px/1.4 -apple-system,'Segoe UI',sans-serif; }
+@media (max-width:620px){
+  .day-brief-body{ grid-template-columns:1fr; }
+  .day-brief-goals{ padding:4px 0 16px; }
+  .day-brief-story{ border-left:0; border-top:1px solid #38523d; padding:16px 0 0; }
+}
+
+
 /* Sağ tık gün özeti için içerik ve görsel ayarları */
 .day-brief-box{ background:var(--bg); border-color:var(--panel-line); }
 .day-brief-box .modal-head{ border-color:var(--panel-line); }
@@ -316,6 +345,42 @@ footer{
   .day-brief-history{ font-size:11px; }
 }
 
+/* ---- Kart okunabilirlik güncellemesi: beyaz metinler, büyük başlıklar, mavi tikler ---- */
+.day-brief-kicker, .day-brief-caption{
+  color:#ffffff !important;
+  font-size:13px !important;
+  line-height:1.4 !important;
+  font-weight:700 !important;
+  letter-spacing:1.1px !important;
+}
+.day-brief-name{ color:#ffffff !important; }
+.day-brief-copy{ color:#ffffff !important; }
+.day-brief-history{ color:#ffffff !important; }
+.day-brief-photo-label{ color:#ffffff !important; }
+.day-brief-source{ color:#ffffff !important; }
+.day-brief-arrow{ color:#ffffff !important; }
+.day-brief-note{
+  color:#ffffff !important;
+  font-size:16px !important;
+  line-height:1.55 !important;
+  font-weight:500 !important;
+}
+.day-brief-goals .goal-item input[type=checkbox]{ accent-color: var(--ember) !important; }
+.day-brief-quote{ color:#edbd32 !important; }
+.day-brief-photo.vintage{ filter: grayscale(88%) sepia(10%) contrast(0.92) brightness(0.95); }
+.day-brief-photo.vivid{ filter: saturate(1.22) contrast(1.08) brightness(1.03); }
+
+/* ---- Üst sayaçlar ve ikonlar: hizalama + büyütme ---- */
+.stats{ align-items:center !important; gap:26px !important; }
+.stat{ display:flex; flex-direction:column; }
+.lbl-row{ gap:8px !important; }
+.icon-btn{
+  width:32px !important;
+  height:30px !important;
+  font-size:16px !important;
+  border-radius:5px !important;
+}
+.icon-btn.bell{ font-size:19px !important; }
 
 </style>
 </head>
@@ -384,6 +449,13 @@ function weekdayIndex(dateStr){
   const [y,m,d] = dateStr.split('-').map(Number);
   const wd = new Date(y, m-1, d).getDay();
   return (wd === 0) ? 6 : wd - 1;
+}
+
+function dayOfYearIndex(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const start = Date.UTC(y,0,1);
+  const cur = Date.UTC(y,m-1,d);
+  return Math.round((cur - start) / 86400000);
 }
 
 // Bir günün hedeflerinin yüzde kaçının tamamlandığını ve o gün hiç hedef olup olmadığını döndürür.
@@ -552,6 +624,60 @@ const featuredStories = [
       "Uzun metraj animasyon ve tema parkı fikriyle eğlence endüstrisinde yeni bir ölçek oluşturdu."
     ],
     quote: "“All our dreams can come true, if we have the courage to pursue them.”"
+  },
+  {
+    name: "Nelson Mandela",
+    before: "https://vcdn1-vnexpress.vnecdn.net/2013/06/13/youngmandelablogspot-473603-1371118988.jpg",
+    after: "https://vcdn1-vnexpress.vnecdn.net/2013/06/13/south-african-presidentafp-256179-1371119078.jpg",
+    summary: "Apartheid rejimine karşı mücadelesi onu yıllarca hapse mahkûm etti, ama içindeki adalet inancını hiç kaybetmedi.",
+    challenges: [
+      "1962’de tutuklandı ve devlete karşı sabotaj suçlamasıyla ömür boyu hapis cezası aldı.",
+      "27 yılın 18’ini Robben Adası’ndaki taş ocaklarında ağır işçilik yaparak geçirdi.",
+      "Hapisteyken bile Güney Afrika’daki ırk ayrımcılığına karşı direnişin sembolü haline geldi.",
+      "1990’da serbest bırakıldıktan sonra intikamı değil uzlaşmayı seçti ve 1994’te ülkenin ilk siyahi cumhurbaşkanı oldu."
+    ],
+    quote: "“It always seems impossible until it’s done.”"
+  },
+  {
+    name: "Thomas Edison",
+    before: "http://download.vikidia.org/fr/images/0/04/Thomas_Edison.jpg",
+    after: "http://download.vikidia.org/fr/images/0/04/Thomas_Edison.jpg",
+    sameImage: true,
+    summary: "Öğretmenleri onu okuldan gönderdi; annesi evde eğitmeye devam etti ve tarihin en üretken mucitlerinden biri oldu.",
+    challenges: [
+      "İlkokul öğretmeni zihinsel olarak yetersiz olduğunu söyledi, annesi onu evde okutmaya karar verdi.",
+      "12 yaşında trenlerde gazete ve şeker satarak kendi kimya laboratuvarını kurmaya çalıştı.",
+      "Çalışır bir ampul bulana kadar binlerce denemesi başarısız oldu.",
+      "1879’da pratik ve dayanıklı ilk ampulü geliştirerek evleri aydınlattı."
+    ],
+    quote: "“I have not failed. I've just found 10,000 ways that won't work.”"
+  },
+  {
+    name: "Bill Gates",
+    before: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg/330px-Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg",
+    after: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg/330px-Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg",
+    sameImage: true,
+    summary: "Harvard’ı yarıda bırakıp küçük bir garaj şirketiyle başladı, dünyanın en büyük yazılım şirketlerinden birini kurdu.",
+    challenges: [
+      "Harvard’daki eğitimini yarıda bırakarak henüz kimsenin inanmadığı bir yazılım fikrine yöneldi.",
+      "İlk yıllarda Microsoft, kendisinden çok daha büyük şirketlerle aynı pazarda rekabet etmek zorunda kaldı.",
+      "Kişisel bilgisayarların evlere girmediği bir dönemde bu vizyona inanmaya devam etti.",
+      "Bugün kurduğu şirket milyarlarca cihazda kullanılan bir işletim sistemine sahip."
+    ],
+    quote: "“It's fine to celebrate success but it is more important to heed the lessons of failure.”"
+  },
+  {
+    name: "Drew Barrymore",
+    before: "https://vcdn1-giaitri.vnecdn.net/2008/05/06/adrew-barrymore1-1345570476.jpg",
+    after: "https://vcdn1-giaitri.vnecdn.net/2008/05/06/adrew-barrymore2-1345570476.jpg",
+    summary: "7 yaşında dünya çapında ünlendi, ergenlikte bağımlılıkla mücadele etti ve hayatını kendi iradesiyle yeniden kurdu.",
+    challenges: [
+      "E.T. filmiyle çok küçük yaşta üne kavuştu ve erken yaşta ağır bir magazin baskısıyla tanıştı.",
+      "13 yaşında madde bağımlılığı nedeniyle rehabilitasyon merkezine yattı.",
+      "Mahkemede kendi vasisi olma hakkını kazanarak hayatını yeniden inşa etmeye karar verdi.",
+      "Oyunculuğun yanında kendi yapım şirketini kurarak sektörde güçlü ve bağımsız bir isim haline geldi."
+    ],
+    quote: "“Never confuse a single defeat with a final defeat.”"
   }
 ];
 
@@ -559,7 +685,7 @@ function openDayModal(dateStr){
   const wd = weekdayIndex(dateStr);
   const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
   const [y,m,d] = dateStr.split('-');
-  const story = featuredStories[(Number(d) + Number(m) * 3) % featuredStories.length];
+  const story = featuredStories[dayOfYearIndex(dateStr) % featuredStories.length];
 
   openModal(`${d}.${m}.${y}`, (body) => {
     body.className = 'day-brief-body';
@@ -614,7 +740,9 @@ function openDayModal(dateStr){
       const wrap = document.createElement('div');
       wrap.className = 'day-brief-photo-wrap';
       const img = document.createElement('img');
-      img.className = 'day-brief-photo ' + variant + (story.split ? ' split-photo' : '');
+      let extraCls = story.split ? ' split-photo' : '';
+      if(story.sameImage) extraCls += (variant === 'before') ? ' vintage' : ' vivid';
+      img.className = 'day-brief-photo ' + variant + extraCls;
       img.src = url;
       img.alt = story.name + ' — ' + label + ' gerçek fotoğraf';
       img.loading = 'lazy';
