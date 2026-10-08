@@ -409,7 +409,14 @@ footer{
 const monthNames = ["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
 const dayLetters = ["Pt","Sl","Çr","Pr","Cm","Ct","Pz"];
 const YEAR = 2026;
-const todayStr = new Date().toISOString().slice(0,10);
+
+function getLocalDateStr(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+const todayStr = getLocalDateStr(new Date());
 const GOALS_KEY = 'goals-2026-v2';
 const COMPLETIONS_KEY = 'completions-2026';
 const REMINDER_KEY = 'reminder-2026';
@@ -746,6 +753,13 @@ function openDayModal(dateStr){
       img.src = url;
       img.alt = story.name + ' — ' + label + ' gerçek fotoğraf';
       img.loading = 'lazy';
+      img.onerror = function() {
+        this.style.display = 'none';
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width:124px;height:124px;background:#3a6ea5;border-radius:3px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;text-align:center;padding:4px;';
+        placeholder.textContent = label + '\n(görsel yok)';
+        this.parentElement.insertBefore(placeholder, this);
+      };
       const caption = document.createElement('div');
       caption.className = 'day-brief-photo-label';
       caption.textContent = label;
@@ -1085,7 +1099,7 @@ function renderGrid(){
       row.appendChild(td);
     }
     for(let d=1; d<=daysInMonth; d++){
-      const col = (startCol + d - 1) % 7;
+      const col = (startCol + d -  1) % 7;
       if(col === 0 && d !== 1){ table.appendChild(row); row = document.createElement('tr'); }
       const dateStr = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const td = document.createElement('td');
@@ -1103,6 +1117,10 @@ function renderGrid(){
 
       div.textContent = d;
       if(dateStr === todayStr) div.classList.add('today');
+      // Her iki olay da çalışsın: tek tık ve sağ tık
+      div.addEventListener('click', (e) => {
+        if(e.target === div || e.target.tagName === 'DIV') openDayModal(dateStr);
+      });
       div.addEventListener('contextmenu', (e) => { e.preventDefault(); openDayModal(dateStr); });
       td.appendChild(div);
       row.appendChild(td);
@@ -1141,7 +1159,7 @@ function calcStreaks(){
   let c = 0;
   let cursor = new Date(todayStr);
   const fullSet = new Set(fullDates);
-  while(fullSet.has(cursor.toISOString().slice(0,10))){
+  while(fullSet.has(getLocalDateStr(cursor))){
     c++;
     cursor.setDate(cursor.getDate()-1);
   }
@@ -1162,7 +1180,7 @@ function checkReminder(){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   const now = new Date();
   const cur = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  const today = now.toISOString().slice(0,10);
+  const today = getLocalDateStr(now);
   if(cur === reminder.time && reminder.lastNotifiedDate !== today){
     if(dayPercent(today) !== 100){
       try{ new Notification('Zincirini kırma!', { body: 'Bugünü henüz işaretlemedin.' }); }catch(e){}
