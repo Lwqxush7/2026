@@ -693,6 +693,22 @@ function openDayModal(dateStr){
       });
     }
 
+    if(applicable.length > 0){
+      const resetButton = document.createElement('button');
+      resetButton.type = 'button';
+      resetButton.className = 'icon-btn wide';
+      resetButton.style.cssText = 'width: 100%; margin-top: 14px;';
+      resetButton.textContent = 'Hepsini Sıfırla';
+      resetButton.addEventListener('click', () => {
+        delete completions[dateStr];
+        saveCompletions();
+        renderGrid();
+        renderStats();
+        goalsColumn.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+      });
+      goalsColumn.appendChild(resetButton);
+    }
+
     const storyColumn = document.createElement('section');
     storyColumn.className = 'day-brief-story';
     const heading = document.createElement('span');
