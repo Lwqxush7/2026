@@ -694,10 +694,27 @@ function openDayModal(dateStr){
     }
 
     if(applicable.length > 0){
+      const markAllButton = document.createElement('button');
+      markAllButton.type = 'button';
+      markAllButton.className = 'icon-btn wide';
+      markAllButton.style.cssText = 'width: 100%; margin-top: 14px;';
+      markAllButton.textContent = 'Hepsini İşaretle';
+      markAllButton.addEventListener('click', () => {
+        if(!completions[dateStr]) completions[dateStr] = [];
+        applicable.forEach(g => {
+          if(!completions[dateStr].includes(g.id)) completions[dateStr].push(g.id);
+        });
+        saveCompletions();
+        renderGrid();
+        renderStats();
+        goalsColumn.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+      });
+      goalsColumn.appendChild(markAllButton);
+
       const resetButton = document.createElement('button');
       resetButton.type = 'button';
       resetButton.className = 'icon-btn wide';
-      resetButton.style.cssText = 'width: 100%; margin-top: 14px;';
+      resetButton.style.cssText = 'width: 100%; margin-top: 8px;';
       resetButton.textContent = 'Hepsini Sıfırla';
       resetButton.addEventListener('click', () => {
         delete completions[dateStr];
