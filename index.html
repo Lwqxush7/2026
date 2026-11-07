@@ -49,6 +49,7 @@
   --parchment: #eef3fa;
   --gold: #5eb8ff;
   --ember: #3f8ed9;
+  --rest: #7c6ce6;
   --muted: #9db0c8;
   --glass: rgba(255,255,255,0.09);
   --glass-strong: rgba(18,32,54,0.62);
@@ -97,10 +98,10 @@ h1{
   box-shadow: var(--glass-shadow);
 }
 
-/* ---- Üst sıra: 4 istatistik + 4 buton, tek çizgi ---- */
+/* ---- Üst sıra: 5 istatistik + 4 buton ---- */
 .topbar{
   display:grid;
-  grid-template-columns: repeat(4, minmax(0,1fr)) repeat(4, 60px);
+  grid-template-columns: repeat(5, minmax(0,1fr)) repeat(4, 60px);
   grid-auto-rows: 64px;
   gap: 12px;
   align-items: stretch;
@@ -114,6 +115,7 @@ h1{
   min-width: 0;
 }
 .stat .num{ font-family: Georgia, serif; font-size: 26px; color: var(--gold); line-height:1; }
+.stat.rest-stat .num{ color: #b3a8ff; }
 .stat .lbl{
   font-size: 10.5px; color: var(--muted); letter-spacing: .3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
@@ -132,9 +134,10 @@ h1{
 .top-btn:active{ transform: scale(0.95); }
 
 @media (max-width: 820px){
-  .topbar{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .topbar{ grid-template-columns: repeat(6, minmax(0,1fr)); }
   .stat{ grid-column: span 2; }
   .top-btn{ grid-column: span 1; }
+  .top-btn:nth-child(8), .top-btn:nth-child(9){ grid-column: span 3; }
 }
 
 /* ---- Ay kartları ---- */
@@ -197,6 +200,17 @@ h1{
   font-weight: 700;
 }
 .day.full.today{ box-shadow: inset 0 0 0 1.5px var(--gold); }
+.day.rest{ background: rgba(124,108,230,0.55); color: transparent; }
+.day.rest::after{
+  content: '☾';
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+}
+.day.rest.today{ box-shadow: inset 0 0 0 1.5px var(--gold); }
 .day.filler{ visibility: hidden; cursor: default; }
 
 /* ---- Modal ---- */
@@ -245,6 +259,8 @@ h1{
 }
 .icon-btn:hover{ background: rgba(255,255,255,0.18); }
 .icon-btn.wide{ padding:9px 15px; font-size:12.5px; }
+.icon-btn.rest-btn.active{ background: rgba(124,108,230,0.55); border-color: rgba(179,168,255,0.85); color:#fff; }
+.rest-note{ margin:8px 0 0; padding:0 2px; font-size:11.5px; line-height:1.5; color:#b3a8ff; }
 
 .goal-item{
   display:flex; align-items:center; gap:10px;
@@ -303,52 +319,62 @@ h1{
 .backup-row{ display:flex; gap:10px; margin-top: 6px; flex-wrap: wrap; }
 .field-full{ width:100%; }
 
-/* ---- Gün hedef özeti: sağ tık penceresi ---- */
+/* ---- Gün penceresi: hedefler + hikâye ---- */
 .day-brief-box{
-  width:min(760px, 100%);
-  padding:20px;
-  background: rgba(14,26,46,0.70);
+  width:min(1040px, 100%);
+  max-height: 90vh;
+  padding:24px 26px 28px;
+  background: rgba(14,26,46,0.78);
 }
-.day-brief-body{ display:grid; grid-template-columns:minmax(220px, .9fr) minmax(320px, 1.1fr); min-height:300px; }
-.day-brief-goals{ padding:4px 20px 4px 0; }
+.day-brief-body{
+  display:grid;
+  grid-template-columns:minmax(230px, .6fr) minmax(0, 1.4fr);
+  min-height:320px;
+}
+.day-brief-goals{ padding:4px 24px 4px 0; align-self:start; position:sticky; top:0; }
 .day-brief-kicker, .day-brief-caption{
-  display:block; color:#fff; font:700 13px/1.4 var(--sans);
-  letter-spacing:1.1px; margin-bottom:10px;
+  display:block; color:var(--gold); font:700 12px/1.4 var(--sans);
+  letter-spacing:1.6px; margin-bottom:12px;
 }
-.day-brief-story{ border-left:1px solid var(--panel-line); padding:4px 0 0 20px; }
-.day-brief-quote{ margin:0 0 18px; color:#edbd32; font-size:15px; font-style:italic; line-height:1.45; }
-.day-brief-photos{ display:flex; align-items:center; justify-content:center; gap:16px; margin:10px 0 14px; }
-.day-brief-photo-wrap{ width:132px; text-align:center; }
-.day-brief-photo{
-  display:block; width:124px; height:124px; margin:0 auto 7px; border-radius:16px;
-  object-fit:cover; object-position:center;
-  border:1px solid var(--panel-line); background:#284738;
-  box-shadow:0 7px 16px rgba(0,0,0,.25);
+.day-brief-story{ border-left:1px solid var(--panel-line); padding:4px 0 0 30px; }
+.day-brief-motto{ margin:0 0 22px; color:#edbd32; font-size:15px; font-style:italic; line-height:1.55; }
+.day-brief-name{ margin:0 0 8px; color:#fff; font-size:34px; font-weight:400; letter-spacing:.3px; line-height:1.15; }
+.day-brief-tagline{ margin:0 0 24px; color:var(--muted); font:14.5px/1.6 var(--sans); }
+.day-brief-text{ margin:0 0 16px; color:#e6edf7; font:16px/1.85 Georgia, 'Iowan Old Style', serif; max-width:62ch; }
+.day-brief-steps{ list-style:none; margin:8px 0 26px; padding:0; counter-reset:step; display:grid; gap:10px; }
+.day-brief-steps li{
+  position:relative; counter-increment:step;
+  padding:13px 16px 13px 56px;
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  border-radius:16px;
+  color:#fff; font:14px/1.65 var(--sans);
 }
-.day-brief-photo.after{ border-color:var(--gold); }
-.day-brief-photo.split-photo.before{ object-position:left center; }
-.day-brief-photo.split-photo.after{ object-position:right center; }
-.day-brief-photo.vintage{ filter: grayscale(88%) sepia(10%) contrast(0.92) brightness(0.95); }
-.day-brief-photo.vivid{ filter: saturate(1.22) contrast(1.08) brightness(1.03); }
-.day-brief-photo-label{ color:#fff; font:9px/1.2 var(--sans); letter-spacing:.7px; }
-.day-brief-arrow{ color:#fff; font:20px/1 sans-serif; margin-top:-20px; }
-.day-brief-name{ margin:2px 0 10px; color:#fff; text-align:center; font-size:19px; }
-.day-brief-copy{ max-width:390px; margin:0 auto; color:#fff; text-align:center; font:12px/1.5 var(--sans); }
-.day-brief-history{
-  margin:13px auto 12px; padding:0 0 0 19px; max-width:420px;
-  color:#fff; font:11.5px/1.5 var(--sans);
+.day-brief-steps li::before{
+  content:counter(step);
+  position:absolute; left:15px; top:50%; transform:translateY(-50%);
+  width:28px; height:28px; border-radius:50%;
+  background:var(--ember); color:#fff;
+  font:700 12.5px/28px var(--sans); text-align:center;
 }
-.day-brief-history li{ margin:0 0 5px; padding-left:2px; }
-.day-brief-important-caption{ margin:12px 0 4px; text-align:center; }
-.day-brief-note{ margin:3px 0 0; color:#fff; text-align:center; font-size:16px; font-style:italic; line-height:1.55; font-weight:500; }
-.day-brief-source{ margin-top:8px; color:#fff; text-align:center; font:10px/1.4 var(--sans); }
-@media (max-width:620px){
+.day-brief-lesson{
+  margin:0 0 26px; padding:16px 18px; border-radius:18px;
+  background:rgba(94,184,255,0.12); border:1px solid rgba(94,184,255,0.35);
+  color:#fff; font:14.5px/1.7 var(--sans);
+}
+.day-brief-lesson strong{ display:block; margin-bottom:6px; color:var(--gold); font-size:11.5px; letter-spacing:1.4px; }
+.day-brief-note{
+  margin:0; padding-left:16px; border-left:3px solid var(--gold);
+  color:#fff; font-size:20px; font-style:italic; line-height:1.6;
+}
+@media (max-width:700px){
+  .day-brief-box{ padding:18px 16px 22px; }
   .day-brief-body{ grid-template-columns:1fr; }
-  .day-brief-goals{ padding:4px 0 16px; }
-  .day-brief-story{ border-left:0; border-top:1px solid var(--panel-line); padding:16px 0 0; }
-  .day-brief-photo-wrap{ width:112px; }
-  .day-brief-photo{ width:104px; height:104px; }
-  .day-brief-history{ font-size:11px; }
+  .day-brief-goals{ position:static; padding:4px 0 18px; }
+  .day-brief-story{ border-left:0; border-top:1px solid var(--panel-line); padding:20px 0 0; }
+  .day-brief-name{ font-size:27px; }
+  .day-brief-text{ font-size:15.5px; }
+  .day-brief-note{ font-size:18px; }
 }
 </style>
 </head>
@@ -361,6 +387,7 @@ h1{
       <div class="stat glass"><div class="num" id="totalDays">0</div><span class="lbl">TAM GÜN</span></div>
       <div class="stat glass"><div class="num" id="halfDays">0</div><span class="lbl">YARIM GÜN</span></div>
       <div class="stat glass"><div class="num" id="undoneDays">0</div><span class="lbl">YAPILMAMIŞ GÜN</span></div>
+      <div class="stat glass rest-stat"><div class="num" id="restCount">0</div><span class="lbl">DİNLENME GÜNÜ</span></div>
       <button class="top-btn glass" id="reminderBtn" title="Hatırlatıcı">🔔</button>
       <button class="top-btn glass" id="backupBtn" title="Yedekle / Geri Yükle">💾</button>
       <button class="top-btn glass" id="accountBtn" title="Hesap">👤</button>
@@ -384,9 +411,11 @@ const todayStr = getLocalDateStr(new Date());
 const GOALS_KEY = 'goals-2026-v2';
 const COMPLETIONS_KEY = 'completions-2026';
 const REMINDER_KEY = 'reminder-2026';
+const REST_KEY = 'rest-2026';
 
 let goals = [];
 let completions = {};
+let restDays = {};
 let reminder = { enabled:false, time:'20:00', lastNotifiedDate:null };
 let currentUser = null;
 let firestoreUnsub = null;
@@ -402,6 +431,8 @@ function loadState(){
   catch(e){ goals = defaultGoals(); }
   try{ const c = localStorage.getItem(COMPLETIONS_KEY); completions = c ? JSON.parse(c) : {}; }
   catch(e){ completions = {}; }
+  try{ const rd = localStorage.getItem(REST_KEY); restDays = rd ? JSON.parse(rd) : {}; }
+  catch(e){ restDays = {}; }
   try{ const r = localStorage.getItem(REMINDER_KEY); if(r) reminder = JSON.parse(r); }
   catch(e){}
 }
@@ -409,12 +440,13 @@ function loadState(){
 function pushToCloud(){
   if(cloudEnabled && currentUser){
     firebase.firestore().collection('users').doc(currentUser.uid)
-      .set({ goals, completions, reminder }).catch(() => {});
+      .set({ goals, completions, reminder, restDays }).catch(() => {});
   }
 }
 function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
 function saveCompletions(){ try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){} pushToCloud(); }
 function saveReminder(){ try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){} pushToCloud(); }
+function saveRest(){ try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){} pushToCloud(); }
 
 function weekdayIndex(dateStr){
   const [y,m,d] = dateStr.split('-').map(Number);
@@ -447,6 +479,13 @@ function toggleGoalCompletion(dateStr, goalId, checked){
   if(!checked && idx !== -1) completions[dateStr].splice(idx,1);
   if(completions[dateStr].length === 0) delete completions[dateStr];
   saveCompletions();
+  renderGrid();
+  renderStats();
+}
+
+function setRestDay(dateStr, on){
+  if(on) restDays[dateStr] = true; else delete restDays[dateStr];
+  saveRest();
   renderGrid();
   renderStats();
 }
@@ -488,166 +527,206 @@ function openModal(titleText, buildBody, boxVariant = ''){
 const featuredStories = [
   {
     name: "Henry Ford",
-    before: "https://photo.znews.vn/w660/Uploaded/lce_jwqqc/2019_10_12/collage_photocat_1.jpg",
-    after: "https://photo.znews.vn/w660/Uploaded/lce_jwqqc/2019_10_12/collage_photocat_1.jpg",
-    split: true,
-    summary: "Makinelere meraklı bir çiftlik çocuğuyken, otomobili erişilebilir kılan sanayi öncülerinden birine dönüştü.",
+    summary: "Çiftlik çocuğundan, otomobili sıradan insanın alabileceği bir şeye çeviren girişimciye.",
+    story: [
+      "Henry Ford, Michigan’da bir çiftlikte büyüdü. Küçük yaşta makinelere merak sardı; saatleri söküp yeniden takar, çiftlikteki aletlerin nasıl çalıştığını anlamadan rahat etmezdi. Genç yaşta Detroit’e gidip makinist olarak çalıştı, geceleri de kendi benzinli aracını yapmaya uğraştı.",
+      "İlk otomobil şirketi kısa sürede battı: arabalar pahalıydı ve yeterince satmıyordu. Ford vazgeçmedi, fikri sadeleştirdi. 1903’te Ford Motor Company’yi kurdu ve tek bir hedefe kilitlendi: sıradan bir ailenin alabileceği, dayanıklı bir araba. 1908’de Model T çıktı.",
+      "Asıl sıçrama hareketli montaj hattıyla geldi. Üretim hızlandı, fiyat düştü ve otomobil birkaç zenginin oyuncağı olmaktan çıkıp milyonların hayatına girdi. Ford’un hikâyesi şunu gösterir: bir başarısızlık fikrin yanlış olduğunu değil, yönteminin değişmesi gerektiğini söylüyor olabilir."
+    ],
     challenges: [
       "Detroit Automobile Company, pahalı ve verimsiz otomobiller ürettiği için kısa sürede kapandı.",
-      "İlk girişimindeki başarısızlıktan sonra tasarımını, maliyetini ve üretim sürecini yeniden kurdu.",
-      "1903’te Ford Motor Company’yi kurarak tek bir ürüne odaklandı: Model T.",
-      "Hareketli montaj hattı sayesinde otomobil üretimini geniş kitlelere ulaşabilecek ölçüde hızlandırdı."
+      "İlk girişimin başarısızlığından sonra tasarımı, maliyeti ve üretim sürecini baştan kurdu.",
+      "1903’te Ford Motor Company’yi kurup tek bir ürüne odaklandı: Model T.",
+      "Hareketli montaj hattıyla otomobil üretimini geniş kitlelere ulaşacak hıza getirdi."
     ],
+    lesson: "İlk deneme battıysa suçlu fikir olmayabilir, yöntem olabilir. Yöntemi değiştir, hedefi koru.",
     quote: "“Whether you think you can, or you think you can’t—you’re right.”"
   },
   {
     name: "Elon Musk",
-    before: "https://cafebiz.cafebizcdn.vn/162123310254002176/2022/10/3/1660135633maxresdefault-1664768983896-166476898396894574709.jpg",
-    after: "https://upload.wikimedia.org/wikipedia/commons/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg",
-    summary: "Yazılımla başlayan girişimcilik yolunu, tekrar kullanılabilir roket hedefiyle uzay teknolojisine taşıdı.",
+    summary: "Yazılımla başladı, ama asıl bahsi roketlerin yeniden kullanılabilir olmasına yatırdı.",
+    story: [
+      "Elon Musk internet girişimleriyle para kazandı ve kazandığı parayı kimsenin ciddiye almadığı bir işe, uzaya yatırdı. Hedefi basitti ama cesurdu: roketleri her seferinde çöpe atmak yerine uçaklar gibi tekrar kullanmak ve uzaya gitmenin maliyetini düşürmek.",
+      "SpaceX’in ilk üç Falcon 1 fırlatması başarısız oldu. 2008’de şirket para bakımından çok zor bir noktaya geldi; dördüncü deneme de olmasaydı iş büyük ihtimalle bitecekti. Dördüncü fırlatma yörüngeye ulaştı ve her şey değişti.",
+      "Sonraki yıllarda SpaceX, geri dönüp inebilen roketlerle uzaya erişimin maliyetini aşağı çekti ve bugün uydu, kargo ve insanlı uçuşlar yapan büyük bir şirket. Bu hikâyenin dersi, son denemenin tek başına belirlenemeyeceği: dördüncü denemeye ancak ilk üçünden sonra ayakta kalanlar ulaşır."
+    ],
     challenges: [
       "İlk üç Falcon 1 fırlatması başarısız oldu; şirket 2008’de finansal olarak çok zorlandı.",
       "Dördüncü Falcon 1 denemesi yörüngeye ulaştı ve SpaceX için dönüm noktası oldu.",
-      "SpaceX, uzaya erişim maliyetini düşürmek için yeniden kullanılabilir roketler üzerine ısrarla çalıştı.",
-      "Bugün şirket; uydu, kargo ve insanlı uzay uçuşları yapan büyük bir uzay teknolojisi kuruluşu."
+      "Yeniden kullanılabilir roket fikrinde ısrar etti ve uzaya erişim maliyetini düşürmeye çalıştı.",
+      "Bugün SpaceX; uydu, kargo ve insanlı uzay uçuşları yapan büyük bir uzay teknolojisi kuruluşu."
     ],
+    lesson: "Kaynağın bitmeden önce kaç deneme hakkın olduğunu bilemezsin. Her denemeyi, bir sonrakini mümkün kılacak şekilde yap.",
     quote: "“When something is important enough, you do it even if the odds are not in your favor.”"
   },
   {
     name: "J. K. Rowling",
-    before: "https://wl-incrivel.cf.tsp.li/resize/728x/jpg/f01/0b9/3ee0155736b44bbaf7232042b6.jpg",
-    after: "https://wl-incrivel.cf.tsp.li/resize/728x/jpg/f01/0b9/3ee0155736b44bbaf7232042b6.jpg",
-    split: true,
-    summary: "Bir roman fikrini yıllarca taşıdı; ret mektuplarına rağmen yazmayı bırakmadı.",
+    summary: "Bir roman fikrini yıllarca taşıdı; ret mektupları yağarken yazmayı bırakmadı.",
+    story: [
+      "J. K. Rowling, Harry Potter fikrini bir tren yolculuğunda aldı ve yıllarca üzerinde çalıştı. İlk kitabı yazarken hayatı kolay değildi: boşanmıştı, küçük bir kızı vardı ve maddi olarak zorlanıyordu. Taslağı çoğunlukla kafelerde ve boş kalan zamanlarda tamamladı.",
+      "Tamamladığı kitap birçok yayınevinden ret aldı. Bu retlerin her biri vazgeçmek için yeterli bir bahaneydi. Rowling hikâyesine inanmaya devam etti ve sonunda Bloomsbury kitabı yayımlamayı kabul etti.",
+      "Harry Potter serisi sonraki yıllarda dünyanın en çok okunan çocuk ve gençlik kitaplarından biri oldu. Rowling’in kendi sözleriyle, hayatın en dibi onun için yeniden inşa edeceği sağlam bir zemine dönüştü."
+    ],
     challenges: [
-      "Harry Potter taslağını öğretmenlik yaptığı dönemde ve maddi belirsizlik içindeyken tamamladı.",
-      "İlk kitabı birçok yayınevinden ret aldı; hikâyesini yeniden yazmaya devam etti.",
-      "Bloomsbury, 1996’da kitabı yayımlamayı kabul etti.",
+      "Harry Potter taslağını maddi belirsizlik içindeyken tamamladı.",
+      "İlk kitap birçok yayınevinden ret aldı; o hikâyesini göndermeye devam etti.",
+      "Bloomsbury, 1990’ların sonunda kitabı yayımlamayı kabul etti.",
       "Seri, dünyanın en çok okunan çocuk ve gençlik edebiyatı çalışmalarından birine dönüştü."
     ],
+    lesson: "Ret, işin bittiğini değil, doğru kapıya henüz varmadığını gösterebilir. Doğru kapıyı bulana kadar yazmaya devam et.",
     quote: "“Rock bottom became the solid foundation on which I rebuilt my life.”"
   },
   {
     name: "Madam C. J. Walker",
-    before: "https://upload.wikimedia.org/wikipedia/commons/9/98/Madam_CJ_Walker_face_circa_1914.jpg",
-    after: "https://hips.hearstapps.com/hmg-prod/images/madamcj1-1585002520.png?crop=0.502xw%3A1.00xh%3B0%2C0&resize=1200%3A%2A",
     summary: "Çamaşırcılıktan başlayan hayatını, binlerce kadına iş sağlayan bir girişime dönüştürdü.",
+    story: [
+      "Madam C. J. Walker, Louisiana’da eski kölelerin çocuğu olarak dünyaya geldi ve çok küçük yaşta yetim kaldı. Geçimini çamaşırcılık yaparak sağladı, gün boyu çalışıp çok az para kazandı. Hayatı boyunca eğitim fırsatı bulamadan büyüdü.",
+      "Saç dökülmesi sorunu yaşayınca kendi çözümünü aramaya başladı ve saç bakımı ürünleri geliştirdi. Ürünlerini önce kapı kapı dolaşarak sattı, sonra üretim ve eğitim yapısını kurdu. Walker Agents adlı satış ağıyla binlerce kadını eğitti ve çalıştırdı.",
+      "Walker, kazandığı parayı yalnızca kendine saklamadı; eğitime ve toplumsal mücadeleye destek verdi. O, sıfırdan başlayan birinin hem kendi hayatını hem de çevresindekilerin hayatını değiştirebileceğinin canlı kanıtı."
+    ],
     challenges: [
       "Çocuk yaşta yetim kaldı; geçimini sağlamak için uzun süre çamaşırcılık yaptı.",
       "Saç derisi sorununa çözüm ararken kendi ürününü geliştirdi.",
-      "1908’de eğitim merkezi ve üretim işini büyütecek yapıyı kurmaya başladı.",
-      "Walker Agents ağıyla kadınları eğitti, istihdam etti ve kazancını hayır işlerine de aktardı."
+      "1900’lerin başında üretim ve eğitim yapısını büyütmeye başladı.",
+      "Satış ağıyla kadınları eğitti, istihdam etti ve kazancını hayır işlerine de aktardı."
     ],
+    lesson: "Elinde fırsat yoksa fırsatı sen yarat. Kendi sorununa çözüm bulan, başkalarının da sorununu çözebilir.",
     quote: "“I had to make my own living and my own opportunity.”"
   },
   {
     name: "Steve Jobs",
-    before: "https://genk.mediacdn.vn/139269124445442048/2021/1/15/jobses-16106870273891106031877.jpeg",
-    after: "https://genk.mediacdn.vn/139269124445442048/2021/1/15/jobses-16106870273891106031877.jpeg",
-    split: true,
-    summary: "Üniversiteyi bırakmasına ve kurduğu şirketten ayrılmasına rağmen tasarım odaklı teknoloji fikrinden vazgeçmedi.",
+    summary: "Okulu bıraktı, kurduğu şirketten kovuldu, ama tasarım ve teknoloji aşkından vazgeçmedi.",
+    story: [
+      "Steve Jobs, Reed College’a başladı ama kısa sürede resmi derslere devam etmeyi bıraktı. Okulda kalıp ilgisini çeken dersleri dinledi. Sonraki yıllarda bu dersler ona tasarım ve zarafet konusunda beklenmedik bir bakış kazandırdı.",
+      "1976’da arkadaşı Steve Wozniak’la Apple’ı kurdu. Şirket büyüdü ama 1985’te Jobs, kendi kurduğu şirketten ayrılmak zorunda kaldı. Bu, hayatının en acı anlarından biriydi. Yine de vazgeçmedi; NeXT’i kurdu ve Pixar ile animasyon dünyasında yeni bir sayfa açtı.",
+      "Apple zorluk yaşarken Jobs geri çağrıldı. iMac, iPod ve iPhone gibi ürünlerle şirketin yönünü yeniden belirledi. Jobs’un hikâyesi, en kötü gibi görünen bir ayrılığın bile yeni bir başlangıca dönüşebileceğini gösterir."
+    ],
     challenges: [
       "Reed College’dan ayrıldıktan sonra ilgisini çeken dersleri takip etmeye devam etti.",
       "1976’da Apple’ı kurdu; ilk yıllarda sınırlı kaynaklarla kişisel bilgisayar üretmeye çalıştı.",
       "1985’te Apple’dan ayrılmak zorunda kaldı ve NeXT’i kurdu.",
       "Apple’a döndükten sonra iMac, iPod ve iPhone gibi ürünlerle şirketin yönünü yeniden belirledi."
     ],
+    lesson: "Kaybettiğin yerden değil, sevdiğin işten yeniden başla. Sevdiğin iş seni yine bir yere çıkarır.",
     quote: "“The people who are crazy enough to think they can change the world are the ones who do.”"
   },
   {
     name: "Oprah Winfrey",
-    before: "https://cdn.amomama.com/4f1329bbe5092c17125ca98fe1032e6f5802d4645413d9f3a342805ea0487ffb.jpg",
-    after: "https://cdn.amomama.com/4f1329bbe5092c17125ca98fe1032e6f5802d4645413d9f3a342805ea0487ffb.jpg",
-    split: true,
-    summary: "Yerel yayıncılıktan başlayıp, görüşme formatını küresel bir medya markasına çevirdi.",
+    summary: "Yoksulluk içinde büyüdü ve bir sohbet programını küresel bir medya markasına çevirdi.",
+    story: [
+      "Oprah Winfrey, Mississippi’de yoksul bir ortamda doğdu ve çocukluğunu zorluklar içinde geçirdi. Okumayı ve konuşmayı çok severdi; bu iki sevgi onun hayatını değiştirdi. Burslarla eğitimini sürdürdü ve çok genç yaşta yerel radyoda çalışmaya başladı.",
+      "Radyodan televizyona geçti ve sunuculuk deneyimi kazandı. 1984’te Chicago’da zayıf reytingli bir sabah programını devraldı. Program kısa sürede zirveye çıktı ve ülke çapında yayınlanmaya başladı.",
+      "The Oprah Winfrey Show yıllarca dünyanın en çok izlenen sohbet programlarından biri oldu. Daha sonra OWN ile kendi televizyon kanalını kurdu. Oprah’ın gücü, acısını saklamak yerine onu başkalarını anlama gücüne çevirmesinden geldi."
+    ],
     challenges: [
       "Yoksulluk içinde büyüdü ve eğitimini sürdürmek için burslardan yararlandı.",
       "Yerel radyo ve televizyonda çalışarak sunuculuk deneyimi kazandı.",
       "1984’te Chicago’daki sabah programını devraldı ve program kısa sürede zirveye çıktı.",
       "The Oprah Winfrey Show ve OWN ile medya, yayıncılık ve hayırseverlik alanlarında kalıcı bir etki yarattı."
     ],
+    lesson: "Yaşadığın zorluk, anlatabileceğin hikâyenin ham maddesi. Onu gizleme, anlama ve paylaşma gücüne çevir.",
     quote: "“Turn your wounds into wisdom.”"
   },
   {
     name: "Cristiano Ronaldo",
-    before: "https://i2.prth.gr/files/2014/06/25/soccer-stars-then-and-now-ronaldo.jpg",
-    after: "https://i2.prth.gr/files/2014/06/25/soccer-stars-then-and-now-ronaldo.jpg",
-    split: true,
-    summary: "Madeira’dan ayrılıp genç yaşta akademiye katıldı; disiplinini yıllar boyunca üst seviyede korudu.",
+    summary: "Madeira’dan ayrılan bir çocuk, disiplinini yıllarca zirvede tutarak futbol tarihine geçti.",
+    story: [
+      "Cristiano Ronaldo, Madeira Adası’nda çalışan sınıftan bir ailede büyüdü. Futbola olan yeteneği erken fark edildi ve 12 yaşında Sporting’in akademisi için ailesinden ayrılıp Lizbon’a gitti. Küçük yaşta aileden uzak kalmak, kolay bir seçim değildi.",
+      "Gençken yoğun rekabet ve sakatlıklarla uğraştı. Yeteneği tek başına yetmediğini erken öğrendi; antrenmanı, beslenmeyi ve dinlenmeyi bir sistem haline getirdi. Sporting’den Manchester United’a geçerek Avrupa’nın en zorlu liglerinden birinde kendini kanıtladı.",
+      "Kulüp ve milli takım düzeyinde kazandığı kupalarla futbol tarihinin en üretken oyuncularından biri oldu. Onun hikâyesinin özü yetenek değil, o yeteneği yıllarca her gün aynı disiplinle beslemek."
+    ],
     challenges: [
       "Çalışan sınıf bir ailede büyüdü ve 12 yaşında Sporting’in akademisi için Madeira’dan ayrıldı.",
       "Genç yaşta sakatlık ve yoğun rekabetle mücadele ederek antrenman düzenini sürdürdü.",
       "Sporting’den Manchester United’a geçerek Avrupa’nın en zorlu liglerinden birinde kendini kanıtladı.",
       "Kulüp ve milli takım düzeyinde kazandığı kupalarla futbol tarihinin en üretken oyuncularından biri oldu."
     ],
+    lesson: "Yetenek kapıyı açar, ama odada kalmanı disiplin sağlar. Disiplin bir günlük değil, her günlüktür.",
     quote: "“Your love makes me strong. Your hate makes me unstoppable.”"
   },
   {
     name: "Walt Disney",
-    before: "https://kathrynwarmstrong.wordpress.com/wp-content/uploads/2019/06/the_man_behind_the_myth__.jpg?w=685",
-    after: "https://kathrynwarmstrong.wordpress.com/wp-content/uploads/2019/06/the_man_behind_the_myth__.jpg?w=685",
-    split: true,
-    summary: "İlk stüdyosunun iflasından sonra karakter ve hikâye anlatımına yeniden başladı.",
+    summary: "İlk stüdyosu iflas etti, ama karakterlerini ve hikâye anlatma tutkusunu yanında götürdü.",
+    story: [
+      "Walt Disney çizgi film yapmayı çok genç yaşta kafasına koymuştu. Kansas City’de kurduğu ilk animasyon stüdyosu Laugh-O-Gram iflas etti ve Disney elinde neredeyse hiçbir şey olmadan Kansas City’den ayrılmak zorunda kaldı.",
+      "Yeni bir başlangıç için Hollywood’a gitti. Oswald the Lucky Rabbit karakteriyle başarı yakaladı ama karakterin haklarını kaybetti. Bunun üzerine masaya yeni bir fikirle döndü ve Mickey Mouse’u yarattı. Sesli animasyon döneminin öne çıkan çalışmalarından biri bu karakterle geldi.",
+      "Sonraki yıllarda uzun metrajlı animasyon filmleri ve tema parkı fikriyle eğlence dünyasında yeni bir ölçek oluşturdu. Disney’in hikâyesi bir şeyi netleştirir: elinden bir şey alınabilir, ama onu yaratan yeteneğin hâlâ sende."
+    ],
     challenges: [
       "İlk animasyon stüdyosu Laugh-O-Gram iflas etti; Kansas City’den ayrılmak zorunda kaldı.",
       "Oswald the Lucky Rabbit karakterinin haklarını kaybetmesiyle yeni bir başlangıç yaptı.",
       "Mickey Mouse ile sesli animasyon döneminin öne çıkan çalışmalarından birini üretti.",
       "Uzun metraj animasyon ve tema parkı fikriyle eğlence endüstrisinde yeni bir ölçek oluşturdu."
     ],
+    lesson: "Eserin elinden alınabilir, ama onu yaratan yeteneği kimse alamaz. Yeniden yarat.",
     quote: "“All our dreams can come true, if we have the courage to pursue them.”"
   },
   {
     name: "Nelson Mandela",
-    before: "https://vcdn1-vnexpress.vnecdn.net/2013/06/13/youngmandelablogspot-473603-1371118988.jpg",
-    after: "https://vcdn1-vnexpress.vnecdn.net/2013/06/13/south-african-presidentafp-256179-1371119078.jpg",
-    summary: "Apartheid rejimine karşı mücadelesi onu yıllarca hapse mahkûm etti, ama içindeki adalet inancını hiç kaybetmedi.",
+    summary: "Yıllarca hapiste kaldı, ama adalet inancını ve insanlığını kaybetmedi.",
+    story: [
+      "Nelson Mandela, Güney Afrika’da ırk ayrımcılığına, yani apartheid düzenine karşı mücadele eden bir avukat ve lider olarak tanındı. 1962’de tutuklandı ve sabotaj suçlamasıyla ömür boyu hapis cezası aldı. Hayatının büyük bölümünü demir parmaklıkların ardında geçirdi.",
+      "27 yıllık hapis hayatının yaklaşık 18 yılını Robben Adası’nda geçirdi. Ağır işçilik yaptı, mektup ve ziyaret hakları kısıtlandı. Buna rağmen hapishanede bile direnişin sembolü oldu; mahkûmlara ve gardiyanlara aynı saygıyla davrandı.",
+      "1990’da serbest bırakıldığında intikam yerine uzlaşmayı seçti ve ülkeyi ayrışma yerine birlik yoluna sokmaya çalıştı. 1994’te Güney Afrika’nın ilk siyahi cumhurbaşkanı oldu. Mandela, en uzun karanlıkta bile değerlerine sadık kalmanın mümkün olduğunu gösterdi."
+    ],
     challenges: [
-      "1962’de tutuklandı ve devlete karşı sabotaj suçlamasıyla ömür boyu hapis cezası aldı.",
-      "27 yılın 18’ini Robben Adası’ndaki taş ocaklarında ağır işçilik yaparak geçirdi.",
-      "Hapisteyken bile Güney Afrika’daki ırk ayrımcılığına karşı direnişin sembolü haline geldi.",
+      "1962’de tutuklandı ve sabotaj suçlamasıyla ömür boyu hapis cezası aldı.",
+      "27 yılın yaklaşık 18’ini Robben Adası’nda ağır işçilik yaparak geçirdi.",
+      "Hapisteyken bile ırk ayrımcılığına karşı direnişin sembolü haline geldi.",
       "1990’da serbest bırakıldıktan sonra intikamı değil uzlaşmayı seçti ve 1994’te ülkenin ilk siyahi cumhurbaşkanı oldu."
     ],
+    lesson: "Koşullar seni sınırlayabilir, ama kim olacağını sen seçersin. Karakterin, koşulların elinden kurtulduğun yerdir.",
     quote: "“It always seems impossible until it’s done.”"
   },
   {
     name: "Thomas Edison",
-    before: "http://download.vikidia.org/fr/images/0/04/Thomas_Edison.jpg",
-    after: "http://download.vikidia.org/fr/images/0/04/Thomas_Edison.jpg",
-    sameImage: true,
-    summary: "Öğretmenleri onu okuldan gönderdi; annesi evde eğitmeye devam etti ve tarihin en üretken mucitlerinden biri oldu.",
+    summary: "Okulda başarısız sayıldı, ama binlerce deneme yapmaktan hiç vazgeçmedi.",
+    story: [
+      "Thomas Edison, çocukken okulda uyum sağlayamadı. Öğretmeni onun öğrenemeyeceğini düşündü ve annesi onu evde okutmaya karar verdi. Edison’un meraklı zihni orada gelişti; annesi ona okumayı ve sorgulamayı öğretti.",
+      "Çok genç yaşta trenlerde gazete ve şeker satarak para kazandı, bu parayla kendi küçük laboratuvarını kurmaya çalıştı. Denemek, bozmak ve yeniden denemek onun yaşam biçimi oldu. Çalışan bir ampul bulana kadar sayısız malzemeyi ve tasarımı sınadı.",
+      "1879’da pratik ve dayanıklı ilk ampulü geliştirerek evleri aydınlattı. Edison başarısızlığı başarısızlık olarak görmedi; her başarısız deneme ona işe yaramayan bir yolu daha elemiş oldu. Onun sırrı yetenek değil, vazgeçmeden denemekti."
+    ],
     challenges: [
-      "İlkokul öğretmeni zihinsel olarak yetersiz olduğunu söyledi, annesi onu evde okutmaya karar verdi.",
-      "12 yaşında trenlerde gazete ve şeker satarak kendi kimya laboratuvarını kurmaya çalıştı.",
+      "İlkokul öğretmeni yetersiz olduğunu söyledi, annesi onu evde okutmaya karar verdi.",
+      "Genç yaşta trenlerde gazete ve şeker satarak kendi kimya laboratuvarını kurmaya çalıştı.",
       "Çalışır bir ampul bulana kadar binlerce denemesi başarısız oldu.",
       "1879’da pratik ve dayanıklı ilk ampulü geliştirerek evleri aydınlattı."
     ],
+    lesson: "Başarısız deneme, çalışmayan yolun haritasıdır. Her yanlışı bir elemeye çevir.",
     quote: "“I have not failed. I've just found 10,000 ways that won't work.”"
   },
   {
     name: "Bill Gates",
-    before: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg/330px-Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg",
-    after: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg/330px-Mr._Bill_Gates%2C_in_Glasgow%2C_Scotland_on_November_02%2C_2021_%281%29.jpg",
-    sameImage: true,
-    summary: "Harvard’ı yarıda bırakıp küçük bir garaj şirketiyle başladı, dünyanın en büyük yazılım şirketlerinden birini kurdu.",
-    challenges: [
-      "Harvard’daki eğitimini yarıda bırakarak henüz kimsenin inanmadığı bir yazılım fikrine yöneldi.",
-      "İlk yıllarda Microsoft, kendisinden çok daha büyük şirketlerle aynı pazarda rekabet etmek zorunda kaldı.",
-      "Kişisel bilgisayarların evlere girmediği bir dönemde bu vizyona inanmaya devam etti.",
-      "Bugün kurduğu şirket milyarlarca cihazda kullanılan bir işletim sistemine sahip."
+    summary: "Harvard’ı yarıda bıraktı, küçük bir ekiple dünyanın en büyük yazılım şirketlerinden birini kurdu.",
+    story: [
+      "Bill Gates, çocukluğundan beri bilgisayarlara büyük ilgi duyuyordu. Harvard’da öğrenciyken eğitimini yarıda bırakıp çocukluk arkadaşı Paul Allen’la Microsoft’u kurdu. O zamanlar kişisel bilgisayarlar evlere girmemişti; çoğu insan bunun gerçek olacağına inanmıyordu.",
+      "İlk yıllar kolay geçmedi. Microsoft, kendisinden çok daha büyük şirketlerle aynı pazarda yarışmak zorundaydı. Gates sınırlı kaynaklarla çalıştı, hızlı öğrendi ve doğru anlaşmaları yakaladı. Zamanla Microsoft’un yazılımları dünyanın her yerinde bilgisayarlara girdi.",
+      "Gates sonradan servetinin büyük bölümünü sağlık ve eğitim alanlarına yönlendirdi. Hikâyesi şunu söyler: bir fikre erkenden inanır ve onun için yıllarca çalışırsan, başkalarının henüz görmediği bir geleceğin içinde olursun."
     ],
+    challenges: [
+      "Harvard’daki eğitimini yarıda bırakıp henüz kimsenin inanmadığı bir yazılım fikrine yöneldi.",
+      "İlk yıllarda Microsoft, çok daha büyük şirketlerle aynı pazarda rekabet etmek zorunda kaldı.",
+      "Kişisel bilgisayarların evlere girmediği bir dönemde bu vizyona inanmaya devam etti.",
+      "Kurduğu şirket bugün milyarlarca cihazda kullanılan yazılımlara sahip."
+    ],
+    lesson: "Herkes inanana kadar bekleme. Erken inan, erken başla, yıllarca bırakma.",
     quote: "“It's fine to celebrate success but it is more important to heed the lessons of failure.”"
   },
   {
     name: "Drew Barrymore",
-    before: "https://vcdn1-giaitri.vnecdn.net/2008/05/06/adrew-barrymore1-1345570476.jpg",
-    after: "https://vcdn1-giaitri.vnecdn.net/2008/05/06/adrew-barrymore2-1345570476.jpg",
-    summary: "7 yaşında dünya çapında ünlendi, ergenlikte bağımlılıkla mücadele etti ve hayatını kendi iradesiyle yeniden kurdu.",
+    summary: "Çok küçük yaşta ünlendi, ergenlikte dibe vurdu ve hayatını kendi iradesiyle yeniden kurdu.",
+    story: [
+      "Drew Barrymore, 7 yaşında E.T. filmiyle dünya çapında ünlendi. O yaşta ağır bir magazin baskısıyla ve yetişkin dünyasının beklentileriyle tanıştı. Çocukluğunun büyük kısmı kameraların ve kalabalıkların arasında geçti.",
+      "Ergenlik çağına gelirken yaşadıkları onu zor bir noktaya getirdi. 13 yaşında madde bağımlılığı nedeniyle rehabilitasyon merkezine yattı. Sonrasında mahkemeye başvurarak kendi vasisi olma hakkını kazandı ve hayatının sorumluluğunu kendi eline aldı.",
+      "Oyunculuğa yeniden döndü, kendi yapım şirketini kurdu ve sektörde güçlü, bağımsız bir isim haline geldi. Drew’un hikâyesi, dibe vuran birinin de kendi hayatını yeniden kurabileceğini ve bunun için erken yaşın bir engel olmadığını gösterir."
+    ],
     challenges: [
       "E.T. filmiyle çok küçük yaşta üne kavuştu ve erken yaşta ağır bir magazin baskısıyla tanıştı.",
       "13 yaşında madde bağımlılığı nedeniyle rehabilitasyon merkezine yattı.",
       "Mahkemede kendi vasisi olma hakkını kazanarak hayatını yeniden inşa etmeye karar verdi.",
       "Oyunculuğun yanında kendi yapım şirketini kurarak sektörde güçlü ve bağımsız bir isim haline geldi."
     ],
+    lesson: "Bir yenilgi, hayatın son sözü değildir. Dibe vurduysan en azından artık yukarıdan başka yön kalmadı.",
     quote: "“Never confuse a single defeat with a final defeat.”"
   }
 ];
@@ -726,71 +805,78 @@ function openDayModal(dateStr){
       goalsColumn.appendChild(resetButton);
     }
 
+    // Dinlenme günü: zinciri bozmaz, yapılmamış sayılmaz
+    const restButton = document.createElement('button');
+    restButton.type = 'button';
+    restButton.style.cssText = 'width: 100%; margin-top: 8px;';
+    const restNote = document.createElement('div');
+    restNote.className = 'rest-note';
+    restNote.textContent = 'Dinlenme günü: zinciri bozmaz ve yapılmamış gün sayılmaz.';
+    const paintRest = () => {
+      const on = !!restDays[dateStr];
+      restButton.className = 'icon-btn wide rest-btn' + (on ? ' active' : '');
+      restButton.textContent = on ? '☾ Dinlenme Günü ✓' : '☾ Dinlenme Günü';
+      restNote.style.display = on ? 'block' : 'none';
+    };
+    restButton.addEventListener('click', () => {
+      setRestDay(dateStr, !restDays[dateStr]);
+      paintRest();
+    });
+    paintRest();
+    goalsColumn.appendChild(restButton);
+    goalsColumn.appendChild(restNote);
+
     const storyColumn = document.createElement('section');
     storyColumn.className = 'day-brief-story';
+
     const heading = document.createElement('span');
     heading.className = 'day-brief-caption';
     heading.textContent = 'THE BEST IN THE WORLD';
     const motto = document.createElement('p');
-    motto.className = 'day-brief-quote';
+    motto.className = 'day-brief-motto';
     motto.textContent = '“Bir yola baş koyduysan ve söz verdiysen, ölürsün ama yine de geri dönmezsin.”';
     const name = document.createElement('h3');
     name.className = 'day-brief-name';
     name.textContent = story.name;
+    const tagline = document.createElement('p');
+    tagline.className = 'day-brief-tagline';
+    tagline.textContent = story.summary;
+    storyColumn.append(heading, motto, name, tagline);
 
-    const photos = document.createElement('div');
-    photos.className = 'day-brief-photos';
-    const makePhoto = (url, label, variant) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'day-brief-photo-wrap';
-      const img = document.createElement('img');
-      let extraCls = story.split ? ' split-photo' : '';
-      if(story.sameImage) extraCls += (variant === 'before') ? ' vintage' : ' vivid';
-      img.className = 'day-brief-photo ' + variant + extraCls;
-      img.src = url;
-      img.alt = story.name + ' — ' + label + ' gerçek fotoğraf';
-      img.loading = 'lazy';
-      img.onerror = function() {
-        this.style.display = 'none';
-        const placeholder = document.createElement('div');
-        placeholder.style.cssText = 'width:124px;height:124px;background:#3a6ea5;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;text-align:center;padding:4px;';
-        placeholder.textContent = label + '\n(görsel yok)';
-        this.parentElement.insertBefore(placeholder, this);
-      };
-      const caption = document.createElement('div');
-      caption.className = 'day-brief-photo-label';
-      caption.textContent = label;
-      wrap.append(img, caption);
-      return wrap;
-    };
-    photos.append(makePhoto(story.before, 'BAŞLANGIÇ', 'before'));
-    const arrow = document.createElement('div');
-    arrow.className = 'day-brief-arrow';
-    arrow.textContent = '→';
-    photos.appendChild(arrow);
-    photos.append(makePhoto(story.after, 'BUGÜN', 'after'));
+    story.story.forEach(text => {
+      const p = document.createElement('p');
+      p.className = 'day-brief-text';
+      p.textContent = text;
+      storyColumn.appendChild(p);
+    });
 
-    const summary = document.createElement('p');
-    summary.className = 'day-brief-copy';
-    summary.textContent = story.summary;
-    const list = document.createElement('ul');
-    list.className = 'day-brief-history';
+    const stepsCaption = document.createElement('span');
+    stepsCaption.className = 'day-brief-caption';
+    stepsCaption.textContent = 'DÖNÜM NOKTALARI';
+    const steps = document.createElement('ol');
+    steps.className = 'day-brief-steps';
     story.challenges.forEach(item => {
       const li = document.createElement('li');
       li.textContent = item;
-      list.appendChild(li);
+      steps.appendChild(li);
     });
+    storyColumn.append(stepsCaption, steps);
+
+    const lesson = document.createElement('div');
+    lesson.className = 'day-brief-lesson';
+    const lessonTitle = document.createElement('strong');
+    lessonTitle.textContent = 'BUGÜN İÇİN DERS';
+    lesson.append(lessonTitle, document.createTextNode(story.lesson));
+    storyColumn.appendChild(lesson);
+
     const quoteCaption = document.createElement('span');
-    quoteCaption.className = 'day-brief-caption day-brief-important-caption';
+    quoteCaption.className = 'day-brief-caption';
     quoteCaption.textContent = 'EN ÖNEMLİ SÖZÜ';
     const importantQuote = document.createElement('p');
     importantQuote.className = 'day-brief-note';
     importantQuote.textContent = story.quote;
-    const source = document.createElement('div');
-    source.className = 'day-brief-source';
-    source.textContent = 'Görseller: gerçek arşiv ve editoryal fotoğraflar';
+    storyColumn.append(quoteCaption, importantQuote);
 
-    storyColumn.append(heading, motto, name, photos, summary, list, quoteCaption, importantQuote, source);
     body.append(goalsColumn, storyColumn);
   }, 'day-brief-box');
 }
@@ -890,7 +976,7 @@ function openReminderModal(){
 
 // ---------- Yedekleme (dışa aktar / içe aktar) ----------
 function exportBackup(){
-  const data = { goals, completions, reminder, exportedAt: new Date().toISOString() };
+  const data = { goals, completions, reminder, restDays, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -910,7 +996,8 @@ function importBackupFile(file){
       if(Array.isArray(data.goals)) goals = data.goals;
       if(data.completions && typeof data.completions === 'object') completions = data.completions;
       if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
-      saveGoals(); saveCompletions(); saveReminder();
+      if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
+      saveGoals(); saveCompletions(); saveReminder(); saveRest();
       renderGrid(); renderStats();
       alert('Yedek geri yüklendi.');
     }catch(e){
@@ -972,9 +1059,11 @@ function applyRemoteData(data){
   if(Array.isArray(data.goals)) goals = data.goals;
   if(data.completions && typeof data.completions === 'object') completions = data.completions;
   if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
+  if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
   try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){}
   try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){}
   try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){}
+  try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){}
   renderGrid();
   renderStats();
 }
@@ -989,7 +1078,7 @@ function initCloudSync(){
       const ref = firebase.firestore().collection('users').doc(user.uid);
       ref.get().then((snap) => {
         if(!snap.exists){
-          ref.set({ goals, completions, reminder });
+          ref.set({ goals, completions, reminder, restDays });
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
@@ -1069,7 +1158,7 @@ function renderGrid(){
     let fullInMonth = 0;
     for(let d=1; d<=daysInMonth; d++){
       const ds = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      if(dayPercent(ds) === 100) fullInMonth++;
+      if(!restDays[ds] && dayPercent(ds) === 100) fullInMonth++;
     }
 
     const h2 = document.createElement('h2');
@@ -1100,15 +1189,14 @@ function renderGrid(){
       const dateStr = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const div = document.createElement('div');
       const percent = dayPercent(dateStr);
+      const isRest = !!restDays[dateStr];
 
-      div.className = 'day' + (percent === 100 ? ' full' : '');
-      if(percent > 0 && percent < 100){
+      div.className = 'day' + (isRest ? ' rest' : (percent === 100 ? ' full' : ''));
+      if(!isRest && percent > 0 && percent < 100){
         const deg = percent * 3.6;
         div.style.background = `conic-gradient(var(--ember) 0deg ${deg}deg, transparent ${deg}deg 360deg)`;
-      } else if(percent === 0){
-        div.style.background = '';
       }
-      div.title = (percent > 0 && percent < 100) ? (percent + '%') : '';
+      div.title = isRest ? 'Dinlenme günü' : ((percent > 0 && percent < 100) ? (percent + '%') : '');
 
       div.textContent = d;
       if(dateStr === todayStr) div.classList.add('today');
@@ -1125,38 +1213,38 @@ function renderGrid(){
 }
 
 // ---------- İstatistikler ----------
+// Dinlenme günleri zinciri bozmaz; yarım / yapılmamış gün olarak da sayılmaz.
 function calcStreaks(){
-  const fullDates = [];
-  let halfCount = 0, undoneCount = 0;
+  let total = 0, halfCount = 0, undoneCount = 0, restCount = 0;
+  let best = 0, run = 0;
   for(let m=0;m<12;m++){
     const daysInMonth = new Date(YEAR, m+1, 0).getDate();
     for(let d=1; d<=daysInMonth; d++){
       const ds = `${YEAR}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if(restDays[ds]){ restCount++; continue; }
       const info = dayInfo(ds);
-      if(info.percent === 100) fullDates.push(ds);
+      if(info.percent === 100){
+        total++; run++;
+        if(run > best) best = run;
+      } else {
+        run = 0;
+      }
       if(ds <= todayStr && info.hasGoals){
         if(info.percent === 0) undoneCount++;
         else if(info.percent < 100) halfCount++;
       }
     }
   }
-  let best = 0, run = 0, prev = null;
-  for(const d of fullDates){
-    if(prev){
-      const diff = (new Date(d) - new Date(prev)) / 86400000;
-      run = (diff === 1) ? run + 1 : 1;
-    } else { run = 1; }
-    best = Math.max(best, run);
-    prev = d;
-  }
   let c = 0;
-  let cursor = new Date(todayStr);
-  const fullSet = new Set(fullDates);
-  while(fullSet.has(getLocalDateStr(cursor))){
-    c++;
+  const cursor = new Date(todayStr);
+  for(let i=0; i<366; i++){
+    const ds = getLocalDateStr(cursor);
+    if(restDays[ds]){ /* dinlenme günü: seriyi bozmaz */ }
+    else if(dayInfo(ds).percent === 100){ c++; }
+    else { break; }
     cursor.setDate(cursor.getDate()-1);
   }
-  return { best, current: c, total: fullDates.length, half: halfCount, undone: undoneCount };
+  return { best, current: c, total, half: halfCount, undone: undoneCount, rest: restCount };
 }
 
 function renderStats(){
@@ -1165,6 +1253,7 @@ function renderStats(){
   document.getElementById('totalDays').textContent = s.total;
   document.getElementById('halfDays').textContent = s.half;
   document.getElementById('undoneDays').textContent = s.undone;
+  document.getElementById('restCount').textContent = s.rest;
 }
 
 // ---------- Hatırlatıcı döngüsü (sayfa açıkken) ----------
@@ -1175,7 +1264,7 @@ function checkReminder(){
   const cur = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
   const today = getLocalDateStr(now);
   if(cur === reminder.time && reminder.lastNotifiedDate !== today){
-    if(dayPercent(today) !== 100){
+    if(dayPercent(today) !== 100 && !restDays[today]){
       try{ new Notification('Zincirini kırma!', { body: 'Bugünü henüz işaretlemedin.' }); }catch(e){}
     }
     reminder.lastNotifiedDate = today;
