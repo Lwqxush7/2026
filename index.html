@@ -1263,7 +1263,8 @@ function renderGrid(){
       div.className = 'day' + (isRest ? ' rest' : (percent === 100 ? ' full' : ''));
       if(!isRest && percent > 0 && percent < 100){
         const deg = percent * 3.6;
-        div.style.background = `conic-gradient(var(--ember) 0deg ${deg}deg, transparent ${deg}deg 360deg)`;
+        const color = percent < 50 ? '#ef4444' : 'var(--ember)';
+        div.style.background = `conic-gradient(${color} 0deg ${deg}deg, transparent ${deg}deg 360deg)`;
       }
       div.title = isRest ? 'Dinlenme günü' : ((percent > 0 && percent < 100) ? (percent + '%') : '');
 
