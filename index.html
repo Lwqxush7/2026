@@ -412,10 +412,12 @@ const GOALS_KEY = 'goals-2026-v2';
 const COMPLETIONS_KEY = 'completions-2026';
 const REMINDER_KEY = 'reminder-2026';
 const REST_KEY = 'rest-2026';
+const SKIP_KEY = 'skip-2026';
 
 let goals = [];
 let completions = {};
 let restDays = {};
+let skipDays = {};
 let reminder = { enabled:false, time:'20:00', lastNotifiedDate:null };
 let currentUser = null;
 let firestoreUnsub = null;
@@ -433,6 +435,8 @@ function loadState(){
   catch(e){ completions = {}; }
   try{ const rd = localStorage.getItem(REST_KEY); restDays = rd ? JSON.parse(rd) : {}; }
   catch(e){ restDays = {}; }
+  try{ const sk = localStorage.getItem(SKIP_KEY); skipDays = sk ? JSON.parse(sk) : {}; }
+  catch(e){ skipDays = {}; }
   try{ const r = localStorage.getItem(REMINDER_KEY); if(r) reminder = JSON.parse(r); }
   catch(e){}
 }
@@ -440,12 +444,13 @@ function loadState(){
 function pushToCloud(){
   if(cloudEnabled && currentUser){
     firebase.firestore().collection('users').doc(currentUser.uid)
-      .set({ goals, completions, reminder, restDays }).catch(() => {});
+      .set({ goals, completions, reminder, restDays, skipDays }).catch(() => {});
   }
 }
 function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
 function saveCompletions(){ try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){} pushToCloud(); }
 function saveReminder(){ try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){} pushToCloud(); }
+function saveSkip(){ try{ localStorage.setItem(SKIP_KEY, JSON.stringify(skipDays)); }catch(e){} pushToCloud(); }
 function saveRest(){ try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){} pushToCloud(); }
 
 function weekdayIndex(dateStr){
@@ -462,9 +467,11 @@ function dayOfYearIndex(dateStr){
 }
 
 // Bir günün hedeflerinin yüzde kaçının tamamlandığını ve o gün hiç hedef olup olmadığını döndürür.
+// "Yok Say" ile işaretlenen hedefler o gün hesaba katılmaz.
 function dayInfo(dateStr){
   const wd = weekdayIndex(dateStr);
-  const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
+  const skipped = skipDays[dateStr] || [];
+  const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd) && !skipped.includes(g.id));
   if(applicable.length === 0) return { percent: 0, hasGoals: false };
   const done = new Set(completions[dateStr] || []);
   const doneCount = applicable.filter(g => done.has(g.id)).length;
@@ -479,6 +486,17 @@ function toggleGoalCompletion(dateStr, goalId, checked){
   if(!checked && idx !== -1) completions[dateStr].splice(idx,1);
   if(completions[dateStr].length === 0) delete completions[dateStr];
   saveCompletions();
+  renderGrid();
+  renderStats();
+}
+
+function toggleSkip(dateStr, goalId, on){
+  const list = skipDays[dateStr] || [];
+  const i = list.indexOf(goalId);
+  if(on && i === -1) list.push(goalId);
+  if(!on && i !== -1) list.splice(i,1);
+  if(list.length) skipDays[dateStr] = list; else delete skipDays[dateStr];
+  saveSkip();
   renderGrid();
   renderStats();
 }
@@ -731,9 +749,11 @@ const featuredStories = [
   }
 ];
 
-function openDayModal(dateStr){
+function openDayModal(dateStr, showSkip = false){
   const wd = weekdayIndex(dateStr);
-  const applicable = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
+  const dayGoals = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
+  const skippedNow = skipDays[dateStr] || [];
+  const applicable = dayGoals.filter(g => !skippedNow.includes(g.id));
   const [y,m,d] = dateStr.split('-');
   const story = featuredStories[dayOfYearIndex(dateStr) % featuredStories.length];
 
@@ -750,7 +770,9 @@ function openDayModal(dateStr){
     if(applicable.length === 0){
       const p = document.createElement('div');
       p.className = 'modal-empty';
-      p.textContent = 'Bu gün için hedef yok. ⋮ menüsünden hedef ekleyip bu günü seçebilirsin.';
+      p.textContent = dayGoals.length > 0
+        ? 'Bu günün tüm hedefleri yok sayıldı.'
+        : 'Bu gün için hedef yok. ⋮ menüsünden hedef ekleyip bu günü seçebilirsin.';
       goalsColumn.appendChild(p);
     } else {
       const done = new Set(completions[dateStr] || []);
@@ -786,7 +808,7 @@ function openDayModal(dateStr){
         saveCompletions();
         renderGrid();
         renderStats();
-        goalsColumn.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+        goalsColumn.querySelectorAll('.goal-item:not(.skip-item) input[type="checkbox"]').forEach(cb => { cb.checked = true; });
       });
       goalsColumn.appendChild(markAllButton);
 
@@ -800,7 +822,7 @@ function openDayModal(dateStr){
         saveCompletions();
         renderGrid();
         renderStats();
-        goalsColumn.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+        goalsColumn.querySelectorAll('.goal-item:not(.skip-item) input[type="checkbox"]').forEach(cb => { cb.checked = false; });
       });
       goalsColumn.appendChild(resetButton);
     }
@@ -825,6 +847,50 @@ function openDayModal(dateStr){
     paintRest();
     goalsColumn.appendChild(restButton);
     goalsColumn.appendChild(restNote);
+
+    // Yok Say: tiklenen rutinler o gün için sayılmaz
+    if(dayGoals.length > 0){
+      const skipButton = document.createElement('button');
+      skipButton.type = 'button';
+      skipButton.style.cssText = 'width: 100%; margin-top: 8px;';
+      skipButton.className = 'icon-btn wide rest-btn' + (skippedNow.length ? ' active' : '');
+      skipButton.textContent = 'Yok Say' + (skippedNow.length ? ' (' + skippedNow.length + ')' : '');
+
+      const skipPanel = document.createElement('div');
+      skipPanel.style.display = showSkip ? 'block' : 'none';
+      skipPanel.style.marginTop = '8px';
+
+      const skipInfo = document.createElement('div');
+      skipInfo.className = 'rest-note';
+      skipInfo.textContent = 'Tik attığın rutin bu gün için sayılmaz.';
+      skipPanel.appendChild(skipInfo);
+
+      dayGoals.forEach((g, i) => {
+        const row = document.createElement('label');
+        row.className = 'goal-item skip-item';
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = (i + 1) + '.';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = skippedNow.includes(g.id);
+        cb.addEventListener('change', () => {
+          toggleSkip(dateStr, g.id, cb.checked);
+          openDayModal(dateStr, true);
+        });
+        const span = document.createElement('span');
+        span.className = 'goal-item-name';
+        span.textContent = g.name;
+        row.append(num, cb, span);
+        skipPanel.appendChild(row);
+      });
+
+      skipButton.addEventListener('click', () => {
+        skipPanel.style.display = (skipPanel.style.display === 'none') ? 'block' : 'none';
+      });
+      goalsColumn.appendChild(skipButton);
+      goalsColumn.appendChild(skipPanel);
+    }
 
     const storyColumn = document.createElement('section');
     storyColumn.className = 'day-brief-story';
@@ -976,7 +1042,7 @@ function openReminderModal(){
 
 // ---------- Yedekleme (dışa aktar / içe aktar) ----------
 function exportBackup(){
-  const data = { goals, completions, reminder, restDays, exportedAt: new Date().toISOString() };
+  const data = { goals, completions, reminder, restDays, skipDays, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -997,7 +1063,8 @@ function importBackupFile(file){
       if(data.completions && typeof data.completions === 'object') completions = data.completions;
       if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
       if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
-      saveGoals(); saveCompletions(); saveReminder(); saveRest();
+      if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
+      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip();
       renderGrid(); renderStats();
       alert('Yedek geri yüklendi.');
     }catch(e){
@@ -1060,10 +1127,12 @@ function applyRemoteData(data){
   if(data.completions && typeof data.completions === 'object') completions = data.completions;
   if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
   if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
+  if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
   try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){}
   try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){}
   try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){}
   try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){}
+  try{ localStorage.setItem(SKIP_KEY, JSON.stringify(skipDays)); }catch(e){}
   renderGrid();
   renderStats();
 }
@@ -1078,7 +1147,7 @@ function initCloudSync(){
       const ref = firebase.firestore().collection('users').doc(user.uid);
       ref.get().then((snap) => {
         if(!snap.exists){
-          ref.set({ goals, completions, reminder, restDays });
+          ref.set({ goals, completions, reminder, restDays, skipDays });
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
