@@ -367,6 +367,96 @@ h1{
   margin:0; padding-left:16px; border-left:3px solid var(--gold);
   color:#fff; font-size:20px; font-style:italic; line-height:1.6;
 }
+.day-journal{
+  margin:0 0 26px;
+  padding:0 0 24px;
+  border-bottom:1px solid var(--panel-line);
+}
+.day-mood-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.mood-btn{
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  color:var(--parchment);
+  border-radius:14px;
+  padding:8px 14px;
+  font:13.5px/1.2 var(--sans);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  transition:background .15s, border-color .15s, transform .12s;
+}
+.mood-btn:hover{ background:rgba(255,255,255,0.14); }
+.mood-btn:active{ transform:scale(0.97); }
+.mood-btn.active{
+  background:rgba(94,184,255,0.22);
+  border-color:var(--gold);
+  color:#fff;
+  font-weight:600;
+}
+.mood-btn .mood-emoji{ font-size:18px; line-height:1; }
+.journal-field{ margin-bottom:14px; }
+.journal-field:last-child{ margin-bottom:0; }
+.journal-label{
+  display:block;
+  margin-bottom:6px;
+  color:var(--muted);
+  font:600 12.5px/1.4 var(--sans);
+}
+.journal-textarea{
+  width:100%;
+  min-height:76px;
+  resize:vertical;
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  border-radius:14px;
+  color:var(--parchment);
+  font:14px/1.6 var(--sans);
+  padding:10px 12px;
+  outline:none;
+}
+.journal-textarea:focus{
+  border-color:var(--gold);
+  background:rgba(255,255,255,0.10);
+}
+.journal-textarea::placeholder{ color:#7f93ab; }
+.day-hover-card{
+  position:fixed;
+  z-index:250;
+  pointer-events:none;
+  width:min(260px, calc(100vw - 24px));
+  background:rgba(14,26,46,0.92);
+  -webkit-backdrop-filter:blur(22px) saturate(180%);
+  backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid var(--glass-line);
+  border-radius:16px;
+  padding:12px 14px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.20);
+  font-family:var(--sans);
+  color:var(--parchment);
+  display:none;
+}
+.day-hover-item{ margin-bottom:8px; font-size:12.5px; line-height:1.45; }
+.day-hover-item:last-child{ margin-bottom:0; }
+.day-hover-lbl{
+  display:block;
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:.6px;
+  color:var(--gold);
+  margin-bottom:2px;
+}
+.day-hover-val{
+  color:#e6edf7;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.day-hover-val.empty{ color:var(--muted); }
 @media (max-width:700px){
   .day-brief-box{ padding:18px 16px 22px; }
   .day-brief-body{ grid-template-columns:1fr; }
@@ -413,11 +503,13 @@ const COMPLETIONS_KEY = 'completions-2026';
 const REMINDER_KEY = 'reminder-2026';
 const REST_KEY = 'rest-2026';
 const SKIP_KEY = 'skip-2026';
+const JOURNAL_KEY = 'journal-2026';
 
 let goals = [];
 let completions = {};
 let restDays = {};
 let skipDays = {};
+let journals = {};
 let reminder = { enabled:false, time:'20:00', lastNotifiedDate:null };
 let currentUser = null;
 let firestoreUnsub = null;
@@ -437,6 +529,8 @@ function loadState(){
   catch(e){ restDays = {}; }
   try{ const sk = localStorage.getItem(SKIP_KEY); skipDays = sk ? JSON.parse(sk) : {}; }
   catch(e){ skipDays = {}; }
+  try{ const j = localStorage.getItem(JOURNAL_KEY); journals = j ? JSON.parse(j) : {}; }
+  catch(e){ journals = {}; }
   try{ const r = localStorage.getItem(REMINDER_KEY); if(r) reminder = JSON.parse(r); }
   catch(e){}
 }
@@ -444,7 +538,7 @@ function loadState(){
 function pushToCloud(){
   if(cloudEnabled && currentUser){
     firebase.firestore().collection('users').doc(currentUser.uid)
-      .set({ goals, completions, reminder, restDays, skipDays }).catch(() => {});
+      .set({ goals, completions, reminder, restDays, skipDays, journals }).catch(() => {});
   }
 }
 function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
@@ -452,6 +546,17 @@ function saveCompletions(){ try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stri
 function saveReminder(){ try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){} pushToCloud(); }
 function saveSkip(){ try{ localStorage.setItem(SKIP_KEY, JSON.stringify(skipDays)); }catch(e){} pushToCloud(); }
 function saveRest(){ try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){} pushToCloud(); }
+let journalCloudTimer = null;
+function saveJournals(immediateCloud = true){
+  try{ localStorage.setItem(JOURNAL_KEY, JSON.stringify(journals)); }catch(e){}
+  if(immediateCloud){
+    if(journalCloudTimer){ clearTimeout(journalCloudTimer); journalCloudTimer = null; }
+    pushToCloud();
+  } else {
+    if(journalCloudTimer) clearTimeout(journalCloudTimer);
+    journalCloudTimer = setTimeout(() => { journalCloudTimer = null; pushToCloud(); }, 500);
+  }
+}
 
 function weekdayIndex(dateStr){
   const [y,m,d] = dateStr.split('-').map(Number);
@@ -750,6 +855,7 @@ const featuredStories = [
 ];
 
 function openDayModal(dateStr, showSkip = false){
+  hideDayHover();
   const wd = weekdayIndex(dateStr);
   const dayGoals = goals.filter(g => g.name.trim() !== '' && g.days.includes(wd));
   const skippedNow = skipDays[dateStr] || [];
@@ -894,6 +1000,82 @@ function openDayModal(dateStr, showSkip = false){
 
     const storyColumn = document.createElement('section');
     storyColumn.className = 'day-brief-story';
+
+    const journalSection = document.createElement('div');
+    journalSection.className = 'day-journal';
+    const journalCaption = document.createElement('span');
+    journalCaption.className = 'day-brief-caption';
+    journalCaption.textContent = 'GÜNLÜK MOD & NOTLAR';
+    journalSection.appendChild(journalCaption);
+
+    const curJournal = journals[dateStr] || { mood: '', feeling: '', gratitude: '' };
+    const updateJournal = (patch, immediateCloud = true) => {
+      const entry = Object.assign({ mood: '', feeling: '', gratitude: '' }, journals[dateStr] || {}, patch);
+      if(!entry.mood && !entry.feeling.trim() && !entry.gratitude.trim()){
+        delete journals[dateStr];
+      } else {
+        journals[dateStr] = entry;
+      }
+      saveJournals(immediateCloud);
+    };
+
+    const moodRow = document.createElement('div');
+    moodRow.className = 'day-mood-row';
+    const moodOptions = [
+      { id: 'good', emoji: '😊', label: 'İyi' },
+      { id: 'mid',  emoji: '😐', label: 'Orta' },
+      { id: 'bad',  emoji: '😔', label: 'Kötü' }
+    ];
+    const moodButtons = [];
+    moodOptions.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mood-btn' + (curJournal.mood === opt.id ? ' active' : '');
+      const em = document.createElement('span');
+      em.className = 'mood-emoji';
+      em.textContent = opt.emoji;
+      const lbl = document.createElement('span');
+      lbl.textContent = opt.label;
+      btn.append(em, lbl);
+      btn.addEventListener('click', () => {
+        const nextMood = (journals[dateStr] && journals[dateStr].mood === opt.id) ? '' : opt.id;
+        updateJournal({ mood: nextMood }, true);
+        moodButtons.forEach(b => b.el.classList.toggle('active', b.id === nextMood));
+      });
+      moodButtons.push({ id: opt.id, el: btn });
+      moodRow.appendChild(btn);
+    });
+    journalSection.appendChild(moodRow);
+
+    const feelingWrap = document.createElement('div');
+    feelingWrap.className = 'journal-field';
+    const feelingLabel = document.createElement('label');
+    feelingLabel.className = 'journal-label';
+    feelingLabel.textContent = 'Bugün nasıl hissettim?';
+    const feelingInput = document.createElement('textarea');
+    feelingInput.className = 'journal-textarea';
+    feelingInput.placeholder = 'Bugün nasıl hissettiğini yaz...';
+    feelingInput.value = curJournal.feeling || '';
+    feelingInput.addEventListener('input', () => updateJournal({ feeling: feelingInput.value }, false));
+    feelingInput.addEventListener('blur', () => updateJournal({ feeling: feelingInput.value }, true));
+    feelingWrap.append(feelingLabel, feelingInput);
+    journalSection.appendChild(feelingWrap);
+
+    const gratitudeWrap = document.createElement('div');
+    gratitudeWrap.className = 'journal-field';
+    const gratitudeLabel = document.createElement('label');
+    gratitudeLabel.className = 'journal-label';
+    gratitudeLabel.textContent = 'Şükrettiğim şeyler';
+    const gratitudeInput = document.createElement('textarea');
+    gratitudeInput.className = 'journal-textarea';
+    gratitudeInput.placeholder = 'Bugün şükrettiğin şeyleri yaz...';
+    gratitudeInput.value = curJournal.gratitude || '';
+    gratitudeInput.addEventListener('input', () => updateJournal({ gratitude: gratitudeInput.value }, false));
+    gratitudeInput.addEventListener('blur', () => updateJournal({ gratitude: gratitudeInput.value }, true));
+    gratitudeWrap.append(gratitudeLabel, gratitudeInput);
+    journalSection.appendChild(gratitudeWrap);
+
+    storyColumn.appendChild(journalSection);
 
     const heading = document.createElement('span');
     heading.className = 'day-brief-caption';
@@ -1042,7 +1224,7 @@ function openReminderModal(){
 
 // ---------- Yedekleme (dışa aktar / içe aktar) ----------
 function exportBackup(){
-  const data = { goals, completions, reminder, restDays, skipDays, exportedAt: new Date().toISOString() };
+  const data = { goals, completions, reminder, restDays, skipDays, journals, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1064,7 +1246,8 @@ function importBackupFile(file){
       if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
       if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
       if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
-      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip();
+      if(data.journals && typeof data.journals === 'object') journals = data.journals;
+      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip(); saveJournals();
       renderGrid(); renderStats();
       alert('Yedek geri yüklendi.');
     }catch(e){
@@ -1128,11 +1311,13 @@ function applyRemoteData(data){
   if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
   if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
   if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
+  if(data.journals && typeof data.journals === 'object') journals = data.journals;
   try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){}
   try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){}
   try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){}
   try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){}
   try{ localStorage.setItem(SKIP_KEY, JSON.stringify(skipDays)); }catch(e){}
+  try{ localStorage.setItem(JOURNAL_KEY, JSON.stringify(journals)); }catch(e){}
   renderGrid();
   renderStats();
 }
@@ -1147,7 +1332,7 @@ function initCloudSync(){
       const ref = firebase.firestore().collection('users').doc(user.uid);
       ref.get().then((snap) => {
         if(!snap.exists){
-          ref.set({ goals, completions, reminder, restDays, skipDays });
+          ref.set({ goals, completions, reminder, restDays, skipDays, journals });
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
@@ -1212,6 +1397,51 @@ document.getElementById('backupBtn').addEventListener('click', openBackupModal);
 document.getElementById('accountBtn').addEventListener('click', openAccountModal);
 
 // ---------- Takvim (CSS Grid, 7 sütun) ----------
+let dayHoverCard = null;
+const moodLabelMap = { good: '😊 İyi', mid: '😐 Orta', bad: '😔 Kötü' };
+function hideDayHover(){
+  if(dayHoverCard) dayHoverCard.style.display = 'none';
+}
+function showDayHover(dateStr, anchorEl){
+  if(!dayHoverCard){
+    dayHoverCard = document.createElement('div');
+    dayHoverCard.className = 'day-hover-card';
+    document.body.appendChild(dayHoverCard);
+  }
+  const entry = journals[dateStr] || {};
+  const moodText = moodLabelMap[entry.mood] || '—';
+  const feelingText = (entry.feeling && entry.feeling.trim()) ? entry.feeling.trim() : '—';
+  const gratitudeText = (entry.gratitude && entry.gratitude.trim()) ? entry.gratitude.trim() : '—';
+
+  dayHoverCard.innerHTML = '';
+  [
+    { lbl: 'MOD', val: moodText },
+    { lbl: 'NASIL HİSSETTİM', val: feelingText },
+    { lbl: 'ŞÜKRETTİKLERİM', val: gratitudeText }
+  ].forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'day-hover-item';
+    const lbl = document.createElement('span');
+    lbl.className = 'day-hover-lbl';
+    lbl.textContent = item.lbl;
+    const val = document.createElement('div');
+    val.className = 'day-hover-val' + (item.val === '—' ? ' empty' : '');
+    val.textContent = item.val;
+    row.append(lbl, val);
+    dayHoverCard.appendChild(row);
+  });
+
+  dayHoverCard.style.display = 'block';
+  const rect = anchorEl.getBoundingClientRect();
+  const cardRect = dayHoverCard.getBoundingClientRect();
+  let left = rect.left + (rect.width / 2) - (cardRect.width / 2);
+  left = Math.max(12, Math.min(left, window.innerWidth - cardRect.width - 12));
+  let top = rect.top - cardRect.height - 8;
+  if(top < 12) top = Math.min(rect.bottom + 8, window.innerHeight - cardRect.height - 12);
+  dayHoverCard.style.left = left + 'px';
+  dayHoverCard.style.top = top + 'px';
+}
+window.addEventListener('scroll', hideDayHover, { passive: true });
 const grid = document.getElementById('grid');
 function renderGrid(){
   grid.innerHTML = '';
@@ -1275,6 +1505,8 @@ function renderGrid(){
         if(e.target === div || e.target.tagName === 'DIV') openDayModal(dateStr);
       });
       div.addEventListener('contextmenu', (e) => { e.preventDefault(); openDayModal(dateStr); });
+      div.addEventListener('mouseenter', () => showDayHover(dateStr, div));
+      div.addEventListener('mouseleave', hideDayHover);
       cal.appendChild(div);
     }
     monthDiv.appendChild(cal);
