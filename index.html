@@ -43,7 +43,7 @@
      measurementId: "G-JQWP88LQ3D"
    };
   var cloudEnabled = firebaseConfig.apiKey !== "APIKEY_BURAYA";
-  if (cloudEnabled && typeof firebase !== "undefined") {
+  if (cloudEnabled && typeof firebase !== "undefined" && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
 </script>
@@ -1096,14 +1096,36 @@ function loadState(){
   catch(e){}
 }
 
+let lastCloudSyncAt = null;
+let lastCloudError = '';
+function formatCloudErrorMessage(err){
+  if(!err) return '';
+  const code = err.code || '';
+  const msg = err.message || '';
+  if(code === 'auth/unauthorized-domain'){
+    return 'Bu alan adı (' + location.hostname + ') Firebase Auth yetkili alan adlarında kayıtlı değil.';
+  }
+  if(msg.indexOf('API_KEY_HTTP_REFERRER_BLOCKED') !== -1 || msg.indexOf('referer') !== -1){
+    return 'Bu alan adı (' + location.origin + ') Firebase API anahtarı HTTP yönlendirici kısıtlamasında izinli değil.';
+  }
+  return msg || code || 'Bulut senkronizasyonu hatası.';
+}
 function pushToCloud(){
   if(cloudEnabled && currentUser && typeof firebase !== 'undefined'){
     try{
       const payload = JSON.parse(JSON.stringify({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides }));
-      firebase.firestore().collection('users').doc(currentUser.uid)
-        .set(payload).catch(() => {});
+      return firebase.firestore().collection('users').doc(currentUser.uid)
+        .set(payload)
+        .then(() => {
+          lastCloudError = '';
+          lastCloudSyncAt = new Date();
+        })
+        .catch((err) => {
+          lastCloudError = formatCloudErrorMessage(err);
+        });
     }catch(e){}
   }
+  return Promise.resolve();
 }
 function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
 function saveCompletions(){ try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){} pushToCloud(); }
@@ -2345,22 +2367,46 @@ function applyRemoteData(data){
   renderStats();
 }
 
+function syncFromCloudNow(){
+  if(!cloudEnabled || !currentUser || typeof firebase === 'undefined') return Promise.resolve(false);
+  const ref = firebase.firestore().collection('users').doc(currentUser.uid);
+  return ref.get({ source: 'server' }).then((snap) => {
+    lastCloudError = '';
+    lastCloudSyncAt = new Date();
+    if(snap.exists){
+      if(!(journalCloudTimer || routineCloudTimer || overrideCloudTimer)){
+        applyRemoteData(snap.data());
+      }
+      return true;
+    }
+    return pushToCloud().then(() => !lastCloudError);
+  }).catch((err) => {
+    lastCloudError = formatCloudErrorMessage(err);
+    return false;
+  });
+}
+
 function initCloudSync(){
   if(!cloudEnabled || typeof firebase === 'undefined'){ updateAccountUI(); return; }
+  if(!firebase.apps.length){ firebase.initializeApp(firebaseConfig); }
+  firebase.auth().getRedirectResult().catch((err) => {
+    if(err) lastCloudError = formatCloudErrorMessage(err);
+  });
   firebase.auth().onAuthStateChanged((user) => {
     currentUser = user;
+    lastCloudError = '';
     updateAccountUI();
     if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
     if(user){
       const ref = firebase.firestore().collection('users').doc(user.uid);
-      ref.get().then((snap) => {
-        if(!snap.exists){
-          pushToCloud();
-        }
-      }).catch(() => {});
+      syncFromCloudNow();
       firestoreUnsub = ref.onSnapshot((snap) => {
         if(snap.metadata.hasPendingWrites || journalCloudTimer || routineCloudTimer || overrideCloudTimer) return;
+        lastCloudError = '';
+        lastCloudSyncAt = new Date();
         if(snap.exists) applyRemoteData(snap.data());
+      }, (err) => {
+        lastCloudError = formatCloudErrorMessage(err);
       });
     }
   });
@@ -2376,6 +2422,13 @@ function flushPendingCloudSync(){
 }
 window.addEventListener('pagehide', flushPendingCloudSync);
 window.addEventListener('beforeunload', flushPendingCloudSync);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden'){
+    flushPendingCloudSync();
+  } else if(document.visibilityState === 'visible'){
+    syncFromCloudNow();
+  }
+});
 
 function openAccountModal(){
   openModal('Hesap', (body) => {
@@ -2393,12 +2446,58 @@ function openAccountModal(){
       info.className = 'modal-info';
       info.textContent = 'Giriş yapıldı: ' + currentUser.email + '. Bu hesapla giriş yaptığın her cihazda aynı veriler görünür ve birbirini günceller.';
       body.appendChild(info);
+
+      const statusBox = document.createElement('div');
+      statusBox.className = 'modal-info';
+      const paintSyncStatus = (customMsg = '') => {
+        if(customMsg){
+          statusBox.style.color = 'var(--gold)';
+          statusBox.textContent = customMsg;
+          return;
+        }
+        if(lastCloudError){
+          statusBox.style.color = '#fca5a5';
+          statusBox.textContent = 'Senkronizasyon hatası: ' + lastCloudError;
+        } else if(lastCloudSyncAt){
+          statusBox.style.color = 'var(--muted)';
+          statusBox.textContent = 'Son eşitleme: ' + lastCloudSyncAt.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        } else {
+          statusBox.style.color = 'var(--muted)';
+          statusBox.textContent = 'Bulut bağlantısı hazır.';
+        }
+      };
+      paintSyncStatus();
+      body.appendChild(statusBox);
+
+      const btnRow = document.createElement('div');
+      btnRow.className = 'backup-row';
+
+      const syncBtn = document.createElement('button');
+      syncBtn.type = 'button';
+      syncBtn.className = 'icon-btn wide';
+      syncBtn.textContent = 'Şimdi Eşitle';
+      syncBtn.addEventListener('click', () => {
+        syncBtn.disabled = true;
+        paintSyncStatus('Eşitleniyor...');
+        flushPendingCloudSync();
+        syncFromCloudNow().then((ok) => {
+          syncBtn.disabled = false;
+          if(ok && !lastCloudError){
+            paintSyncStatus('Eşitlendi.');
+          } else {
+            paintSyncStatus();
+          }
+        });
+      });
+
       const outBtn = document.createElement('button');
       outBtn.type = 'button';
       outBtn.className = 'icon-btn wide';
       outBtn.textContent = 'Çıkış Yap';
       outBtn.addEventListener('click', () => { firebase.auth().signOut(); closeModal(); });
-      body.appendChild(outBtn);
+
+      btnRow.append(syncBtn, outBtn);
+      body.appendChild(btnRow);
       return;
     }
     const info = document.createElement('div');
@@ -2408,7 +2507,8 @@ function openAccountModal(){
 
     const errBox = document.createElement('div');
     errBox.className = 'modal-info';
-    errBox.style.color = 'var(--ember)';
+    errBox.style.color = '#fca5a5';
+    if(lastCloudError) errBox.textContent = 'Giriş hatası: ' + lastCloudError;
     body.appendChild(errBox);
 
     const googleBtn = document.createElement('button');
@@ -2421,7 +2521,15 @@ function openAccountModal(){
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithPopup(provider)
         .then(() => closeModal())
-        .catch((e) => { errBox.textContent = 'Giriş başarısız: ' + e.message; });
+        .catch((e) => {
+          if(e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')){
+            firebase.auth().signInWithRedirect(provider).catch((re) => {
+              errBox.textContent = 'Giriş başarısız: ' + formatCloudErrorMessage(re);
+            });
+            return;
+          }
+          errBox.textContent = 'Giriş başarısız: ' + formatCloudErrorMessage(e);
+        });
     });
     body.appendChild(googleBtn);
   });
