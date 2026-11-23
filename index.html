@@ -31,10 +31,18 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="/firebase-config.js"></script>
 <script>
-  var firebaseConfig = window.__FIREBASE_CONFIG__ || null;
-  var cloudEnabled = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "APIKEY_BURAYA");
+   var firebaseConfig = {
+     apiKey: "AIzaSyCGMPGbw0ygOaIh_p1IbaI40ng7a6TeCXc",
+     authDomain: "project-8555786315836360742.firebaseapp.com",
+     databaseURL: "https://project-8555786315836360742-default-rtdb.europe-west1.firebasedatabase.app",
+     projectId: "project-8555786315836360742",
+     storageBucket: "project-8555786315836360742.firebasestorage.app",
+     messagingSenderId: "129978715392",
+     appId: "1:129978715392:web:b872ac537457a6be6af7e5",
+     measurementId: "G-JQWP88LQ3D"
+   };
+  var cloudEnabled = firebaseConfig.apiKey !== "APIKEY_BURAYA";
   if (cloudEnabled && typeof firebase !== "undefined") {
     firebase.initializeApp(firebaseConfig);
   }
@@ -931,10 +939,10 @@ h1{
       <div class="stat glass"><div class="num" id="halfDays">0</div><span class="lbl">YARIM GÜN</span></div>
       <div class="stat glass"><div class="num" id="undoneDays">0</div><span class="lbl">YAPILMAMIŞ GÜN</span></div>
       <div class="stat glass rest-stat"><div class="num" id="restCount">0</div><span class="lbl">DİNLENME GÜNÜ</span></div>
-      <button class="top-btn glass" id="reminderBtn" title="Hatırlatıcı">🔔</button>
-      <button class="top-btn glass" id="backupBtn" title="Yedekle / Geri Yükle">💾</button>
-      <button class="top-btn glass" id="accountBtn" title="Hesap">👤</button>
-      <button class="top-btn glass" id="goalsBtn" title="Hedefleri düzenle">⋮</button>
+      <button class="top-btn glass" id="reminderBtn" title="Hatırlatıcı" aria-label="Hatırlatıcı">🔔</button>
+      <button class="top-btn glass" id="backupBtn" title="Yedekle / Geri Yükle" aria-label="Yedekle / Geri Yükle">💾</button>
+      <button class="top-btn glass" id="accountBtn" title="Hesap" aria-label="Hesap">👤</button>
+      <button class="top-btn glass" id="goalsBtn" title="Hedefleri düzenle" aria-label="Hedefleri düzenle">⋮</button>
     </div>
     <section class="routine-panel glass" id="routinePanel" aria-label="Günlük Rutin">
       <div class="routine-bar">
@@ -1089,7 +1097,7 @@ function loadState(){
 }
 
 function pushToCloud(){
-  if(cloudEnabled && currentUser){
+  if(cloudEnabled && currentUser && typeof firebase !== 'undefined'){
     try{
       const payload = JSON.parse(JSON.stringify({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides }));
       firebase.firestore().collection('users').doc(currentUser.uid)
@@ -1177,20 +1185,15 @@ function insertRoutineItem(list, newItem){
   }
   const ne = getRoutineEnd(newItem);
   let insertAt = 0;
-  let foundLe = false;
   for(let i = 0; i < next.length; i++){
     const cs = getRoutineStart(next[i]);
     if(!cs) continue;
     if(cs < ns){
       insertAt = i + 1;
-      foundLe = true;
     } else if(cs === ns){
       const ce = getRoutineEnd(next[i]);
       if(!ne || !ce || ce <= ne){
         insertAt = i + 1;
-        foundLe = true;
-      } else if(!foundLe){
-        insertAt = i;
       }
     }
   }
@@ -1263,6 +1266,7 @@ function setRestDay(dateStr, on){
 // ---------- Modal sistemi ----------
 let overlayEl = null;
 function closeModal(){
+  flushPendingCloudSync();
   if(overlayEl){ overlayEl.remove(); overlayEl = null; }
   document.removeEventListener('keydown', escHandler);
 }
@@ -1280,8 +1284,10 @@ function openModal(titleText, buildBody, boxVariant = ''){
   t.className = 'modal-title';
   t.textContent = titleText;
   const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
   closeBtn.className = 'modal-close';
   closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Kapat');
   closeBtn.addEventListener('click', closeModal);
   head.appendChild(t);
   head.appendChild(closeBtn);
@@ -1680,15 +1686,34 @@ function openDayModal(dateStr, showSkip = false){
 
     let dayRoutineEditMode = false;
 
+    function updateDayRoutineHeader(){
+      const { items, isCustom } = getRoutineForDate(dateStr);
+      if(isCustom){
+        routineBadge.textContent = 'Bu güne özel';
+        routineBadge.className = 'schedule-badge custom';
+      } else if(items.length === 0){
+        routineBadge.textContent = 'Boş';
+        routineBadge.className = 'schedule-badge';
+      } else {
+        routineBadge.textContent = `${fullDayNames[wd]} · ${items.length} iş`;
+        routineBadge.className = 'schedule-badge';
+      }
+      routineEditDayBtn.textContent = dayRoutineEditMode ? 'Tamamla' : 'Bu Günü Düzenle';
+      routineEditDayBtn.classList.toggle('active', dayRoutineEditMode);
+      routineResetBtn.style.display = isCustom ? '' : 'none';
+    }
+
     function ensureDayOverride(){
       if(!Object.prototype.hasOwnProperty.call(routineOverrides, dateStr) || !Array.isArray(routineOverrides[dateStr])){
         const base = routineByDay[String(wd)] || [];
         routineOverrides[dateStr] = base.map(it => cloneRoutineItem(it, true));
+        updateDayRoutineHeader();
       }
     }
 
     routineEditDayBtn.addEventListener('click', () => {
       dayRoutineEditMode = !dayRoutineEditMode;
+      if(!dayRoutineEditMode) flushPendingCloudSync();
       renderDayRoutine();
     });
 
@@ -1701,20 +1726,7 @@ function openDayModal(dateStr, showSkip = false){
 
     function renderDayRoutine(){
       const { items, isCustom } = getRoutineForDate(dateStr);
-      if(isCustom){
-        routineBadge.textContent = 'Bu güne özel';
-        routineBadge.className = 'schedule-badge custom';
-      } else if(items.length === 0){
-        routineBadge.textContent = 'Boş';
-        routineBadge.className = 'schedule-badge';
-      } else {
-        routineBadge.textContent = `${fullDayNames[wd]} · ${items.length} iş`;
-        routineBadge.className = 'schedule-badge';
-      }
-
-      routineEditDayBtn.textContent = dayRoutineEditMode ? 'Tamamla' : 'Bu Günü Düzenle';
-      routineEditDayBtn.classList.toggle('active', dayRoutineEditMode);
-      routineResetBtn.style.display = isCustom ? '' : 'none';
+      updateDayRoutineHeader();
 
       routineDayWrap.innerHTML = '';
 
@@ -1908,22 +1920,27 @@ function openDayModal(dateStr, showSkip = false){
         const rowTask = document.createElement('input');
         rowTask.type = 'text';
         rowTask.className = 'schedule-row-task';
-        rowTask.value = item.task || '';
+        let lastValidTask = item.task || '';
+        rowTask.value = lastValidTask;
         rowTask.setAttribute('aria-label', `${idx + 1}. özel rutin işi`);
         rowTask.addEventListener('input', () => {
+          const trimmed = rowTask.value.trim();
+          if(!trimmed) return;
           ensureDayOverride();
+          lastValidTask = rowTask.value;
           routineOverrides[dateStr][idx].task = rowTask.value;
           saveRoutineOverrides(false);
         });
         rowTask.addEventListener('blur', () => {
-          ensureDayOverride();
           const trimmed = rowTask.value.trim();
           if(!trimmed){
-            rowTask.value = routineOverrides[dateStr][idx].task;
-          } else {
-            routineOverrides[dateStr][idx].task = trimmed;
-            rowTask.value = trimmed;
+            rowTask.value = lastValidTask;
+            return;
           }
+          ensureDayOverride();
+          lastValidTask = trimmed;
+          routineOverrides[dateStr][idx].task = trimmed;
+          rowTask.value = trimmed;
           saveRoutineOverrides(true);
         });
 
@@ -2329,7 +2346,7 @@ function applyRemoteData(data){
 }
 
 function initCloudSync(){
-  if(!cloudEnabled){ updateAccountUI(); return; }
+  if(!cloudEnabled || typeof firebase === 'undefined'){ updateAccountUI(); return; }
   firebase.auth().onAuthStateChanged((user) => {
     currentUser = user;
     updateAccountUI();
@@ -2338,9 +2355,9 @@ function initCloudSync(){
       const ref = firebase.firestore().collection('users').doc(user.uid);
       ref.get().then((snap) => {
         if(!snap.exists){
-          ref.set({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides });
+          pushToCloud();
         }
-      });
+      }).catch(() => {});
       firestoreUnsub = ref.onSnapshot((snap) => {
         if(snap.metadata.hasPendingWrites || journalCloudTimer || routineCloudTimer || overrideCloudTimer) return;
         if(snap.exists) applyRemoteData(snap.data());
@@ -2362,10 +2379,12 @@ window.addEventListener('beforeunload', flushPendingCloudSync);
 
 function openAccountModal(){
   openModal('Hesap', (body) => {
-    if(!cloudEnabled){
+    if(!cloudEnabled || typeof firebase === 'undefined'){
       const info = document.createElement('div');
       info.className = 'modal-info';
-      info.textContent = 'Bulut senkronizasyonu henüz kurulmamış (dosyanın başındaki firebaseConfig alanı doldurulmalı). Şu an sadece bu cihazda saklanıyor.';
+      info.textContent = typeof firebase === 'undefined' && cloudEnabled
+        ? 'Bulut bağlantısı yüklenemedi (çevrimdışı olabilirsin). Veriler şimdilik bu cihazda saklanıyor.'
+        : 'Bulut senkronizasyonu henüz kurulmamış (dosyanın başındaki firebaseConfig alanı doldurulmalı). Şu an sadece bu cihazda saklanıyor.';
       body.appendChild(info);
       return;
     }
@@ -2571,7 +2590,8 @@ function calcStreaks(){
     }
   }
   let c = 0;
-  const cursor = new Date(todayStr);
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const cursor = new Date(ty, tm - 1, td);
   for(let i=0; i<366; i++){
     const ds = getLocalDateStr(cursor);
     if(restDays[ds]){ /* dinlenme günü: seriyi bozmaz */ }
@@ -2793,9 +2813,13 @@ function renderRoutineEditor(){
     const rowTask = document.createElement('input');
     rowTask.type = 'text';
     rowTask.className = 'schedule-row-task';
-    rowTask.value = item.task || '';
+    let lastValidTask = item.task || '';
+    rowTask.value = lastValidTask;
     rowTask.setAttribute('aria-label', `${fullDayNames[selectedRoutineDay]} ${idx + 1}. rutin işi`);
     rowTask.addEventListener('input', () => {
+      const trimmed = rowTask.value.trim();
+      if(!trimmed) return;
+      lastValidTask = rowTask.value;
       item.task = rowTask.value;
       saveRoutine(false);
       updateRoutineSummaryOnly();
@@ -2803,11 +2827,12 @@ function renderRoutineEditor(){
     rowTask.addEventListener('blur', () => {
       const trimmed = rowTask.value.trim();
       if(!trimmed){
-        rowTask.value = item.task;
-      } else {
-        item.task = trimmed;
-        rowTask.value = trimmed;
+        rowTask.value = lastValidTask;
+        return;
       }
+      lastValidTask = trimmed;
+      item.task = trimmed;
+      rowTask.value = trimmed;
       saveRoutine(true);
       updateRoutineSummaryOnly();
     });
