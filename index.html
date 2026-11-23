@@ -12,13 +12,18 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>2026 Zinciri Kırma</title>
+<meta name="description" content="Günlük hedef takip takvimi">
+<meta property="og:title" content="2026 Zinciri Kırma">
+<meta property="og:description" content="Günlük hedef takip takvimi">
 
 <!-- OneSignal: telefon kilitliyken / uygulama kapalıyken de bildirim için. -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(function (OneSignal) {
-    OneSignal.init({ appId: "a823248a-8bfe-48c3-b6ed-96419313a1b4" });
+    try {
+      Promise.resolve(OneSignal.init({ appId: "a823248a-8bfe-48c3-b6ed-96419313a1b4" })).catch(function () {});
+    } catch (e) {}
   });
 </script>
 
@@ -26,19 +31,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="/firebase-config.js"></script>
 <script>
-   var firebaseConfig = {
-     apiKey: "AIzaSyCGMPGbw0ygOaIh_p1IbaI40ng7a6TeCXc",
-     authDomain: "project-8555786315836360742.firebaseapp.com",
-     databaseURL: "https://project-8555786315836360742-default-rtdb.europe-west1.firebasedatabase.app",
-     projectId: "project-8555786315836360742",
-     storageBucket: "project-8555786315836360742.firebasestorage.app",
-     messagingSenderId: "129978715392",
-     appId: "1:129978715392:web:b872ac537457a6be6af7e5",
-     measurementId: "G-JQWP88LQ3D"
-   };
-  var cloudEnabled = firebaseConfig.apiKey !== "APIKEY_BURAYA";
-  if (cloudEnabled) {
+  var firebaseConfig = window.__FIREBASE_CONFIG__ || null;
+  var cloudEnabled = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "APIKEY_BURAYA");
+  if (cloudEnabled && typeof firebase !== "undefined") {
     firebase.initializeApp(firebaseConfig);
   }
 </script>
@@ -91,9 +88,7 @@ h1{
 
 /* ---- Cam panel (ortak) ---- */
 .glass{
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
+  background: rgba(255,255,255,0.10);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shadow);
 }
@@ -224,9 +219,7 @@ h1{
   padding: 20px;
 }
 .modal-box{
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  backdrop-filter: blur(30px) saturate(180%);
+  background: rgba(14,26,46,0.92);
   border: 1px solid var(--glass-line);
   border-radius: 26px;
   width: min(380px, 100%);
@@ -324,7 +317,7 @@ h1{
   width:min(1040px, 100%);
   max-height: 90vh;
   padding:24px 26px 28px;
-  background: rgba(14,26,46,0.78);
+  background: rgba(14,26,46,0.94);
 }
 .day-brief-body{
   display:grid;
@@ -430,13 +423,11 @@ h1{
   z-index:250;
   pointer-events:none;
   width:min(260px, calc(100vw - 24px));
-  background:rgba(14,26,46,0.92);
-  -webkit-backdrop-filter:blur(22px) saturate(180%);
-  backdrop-filter:blur(22px) saturate(180%);
+  background:rgba(13,24,42,0.97);
   border:1px solid var(--glass-line);
   border-radius:16px;
   padding:12px 14px;
-  box-shadow:0 16px 40px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.20);
+  box-shadow:0 18px 44px rgba(0,0,0,0.60), inset 0 1px 0 rgba(255,255,255,0.22);
   font-family:var(--sans);
   color:var(--parchment);
   display:none;
@@ -457,6 +448,452 @@ h1{
   word-break:break-word;
 }
 .day-hover-val.empty{ color:var(--muted); }
+/* ---- Ana Sayfa: Günlük Ortak Rutin Oluşturucu & Gün Penceresi Rutin Görünümü ---- */
+.routine-panel{
+  margin-top:12px;
+  border-radius:20px;
+  padding:12px 16px;
+  font-family:var(--sans);
+}
+.routine-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.routine-bar-left{
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.routine-title{
+  font-size:11.5px;
+  font-weight:700;
+  letter-spacing:1.2px;
+  color:var(--gold);
+  white-space:nowrap;
+}
+.routine-summary{
+  font-size:12.5px;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  min-width:0;
+  max-width:100%;
+}
+.routine-toggle-btn{
+  background:rgba(255,255,255,0.10);
+  border:1px solid var(--glass-line);
+  color:var(--parchment);
+  border-radius:12px;
+  padding:7px 14px;
+  font:600 12.5px/1.2 var(--sans);
+  cursor:pointer;
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:background .15s, border-color .15s;
+}
+.routine-toggle-btn:hover{
+  background:rgba(255,255,255,0.18);
+  border-color:rgba(94,184,255,0.45);
+}
+.routine-toggle-btn.open{
+  background:rgba(63,142,217,0.28);
+  border-color:rgba(94,184,255,0.55);
+  color:#fff;
+}
+.routine-body{
+  display:none;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--panel-line);
+}
+.routine-body.open{ display:block; }
+.routine-hint{
+  margin:0 0 12px;
+  font-size:12.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.day-schedule{
+  margin:0 0 26px;
+  padding:0 0 24px;
+  border-bottom:1px solid var(--panel-line);
+}
+.schedule-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px 10px;
+  margin-bottom:12px;
+}
+.schedule-head .day-brief-caption{ margin-bottom:0; }
+.schedule-head-right{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.schedule-badge{
+  font:600 11.5px/1.2 var(--sans);
+  color:var(--muted);
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  border-radius:10px;
+  padding:4px 9px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.schedule-badge.custom{
+  color:#fff;
+  background:rgba(124,108,230,0.28);
+  border-color:rgba(179,168,255,0.55);
+}
+.day-routine-edit-btn{
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  color:var(--parchment);
+  border-radius:10px;
+  padding:4px 10px;
+  font:600 11.5px/1.2 var(--sans);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .15s, border-color .15s;
+}
+.day-routine-edit-btn:hover{
+  background:rgba(255,255,255,0.15);
+  border-color:rgba(94,184,255,0.45);
+}
+.day-routine-edit-btn.active{
+  background:rgba(63,142,217,0.30);
+  border-color:rgba(94,184,255,0.55);
+  color:#fff;
+}
+.routine-days-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.routine-day-tabs{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.routine-day-tab{
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--panel-line);
+  color:var(--muted);
+  border-radius:10px;
+  padding:6px 10px;
+  font:600 12px/1.2 var(--sans);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.routine-day-tab:hover{
+  background:rgba(255,255,255,0.12);
+  color:var(--parchment);
+}
+.routine-day-tab.active{
+  background:rgba(63,142,217,0.30);
+  border-color:rgba(94,184,255,0.65);
+  color:#fff;
+}
+.routine-day-count{
+  font-size:10.5px;
+  opacity:0.8;
+  font-variant-numeric:tabular-nums;
+}
+.routine-copy-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.routine-mini-btn{
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--panel-line);
+  color:var(--muted);
+  border-radius:9px;
+  padding:5px 9px;
+  font:600 11.5px/1.2 var(--sans);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.routine-mini-btn:hover:not(:disabled){
+  background:rgba(255,255,255,0.14);
+  border-color:rgba(94,184,255,0.45);
+  color:var(--parchment);
+}
+.routine-mini-btn:disabled{
+  opacity:0.35;
+  cursor:default;
+}
+.schedule-form{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto auto;
+  gap:8px;
+  margin-bottom:14px;
+  align-items:stretch;
+}
+.schedule-form.day-edit-form{
+  grid-template-columns:auto minmax(0,1fr) auto;
+}
+.routine-scope-select{
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  border-radius:12px;
+  color:var(--parchment);
+  font:600 12.5px/1.3 var(--sans);
+  padding:8px 10px;
+  outline:none;
+  color-scheme:dark;
+  cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.routine-scope-select:focus,
+.routine-scope-select:hover{
+  border-color:rgba(94,184,255,0.55);
+  background:rgba(255,255,255,0.11);
+}
+.routine-scope-select option{
+  background:#122036;
+  color:#eef3fa;
+}
+.routine-time-range{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  border-radius:12px;
+  padding:2px 8px;
+  transition:border-color .15s, background .15s;
+}
+.routine-time-range:focus-within{
+  border-color:var(--gold);
+  background:rgba(255,255,255,0.11);
+}
+.routine-time-range.row{
+  background:rgba(255,255,255,0.06);
+  border-color:transparent;
+  border-radius:10px;
+  padding:1px 6px;
+}
+.routine-time-range.row:hover,
+.routine-time-range.row:focus-within{
+  border-color:var(--panel-line);
+  background:rgba(255,255,255,0.10);
+}
+.routine-time-sep{
+  color:var(--muted);
+  font:600 12px/1 var(--sans);
+  user-select:none;
+  padding:0 1px;
+}
+.schedule-time-input,
+.schedule-task-input{
+  background:rgba(255,255,255,0.07);
+  border:1px solid var(--panel-line);
+  border-radius:12px;
+  color:var(--parchment);
+  font:13.5px/1.4 var(--sans);
+  padding:8px 11px;
+  outline:none;
+  min-width:0;
+  transition:border-color .15s, background .15s;
+}
+.schedule-time-input{
+  background:transparent;
+  border:none;
+  border-radius:8px;
+  padding:5px 4px;
+  font-variant-numeric:tabular-nums;
+  color:var(--gold);
+  font-weight:600;
+  color-scheme:dark;
+  width:auto;
+}
+.schedule-task-input::placeholder{ color:#7f93ab; }
+.schedule-task-input:focus{
+  border-color:var(--gold);
+  background:rgba(255,255,255,0.11);
+}
+.schedule-task-input.invalid{
+  border-color:#ef4444;
+  background:rgba(239,68,68,0.10);
+}
+.schedule-add-btn{
+  background:rgba(63,142,217,0.30);
+  border:1px solid rgba(94,184,255,0.45);
+  color:var(--parchment);
+  border-radius:12px;
+  padding:8px 15px;
+  font:600 13px/1.2 var(--sans);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:border-color .15s, color .15s, transform .12s;
+}
+.schedule-add-btn:hover{
+  background:rgba(63,142,217,0.30);
+  border-color:rgba(94,184,255,0.75);
+  color:#fff;
+}
+.schedule-add-btn:active{ transform:scale(0.97); }
+.schedule-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:8px;
+}
+.schedule-item{
+  display:grid;
+  grid-template-columns:24px auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--panel-line);
+  border-radius:14px;
+  transition:background .15s, border-color .15s;
+}
+.schedule-item:hover{
+  background:rgba(255,255,255,0.09);
+  border-color:rgba(255,255,255,0.24);
+}
+.day-routine-row{
+  display:grid;
+  grid-template-columns:24px auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--panel-line);
+  border-radius:14px;
+}
+.day-routine-time{
+  font:600 12.5px/1.2 var(--sans);
+  font-variant-numeric:tabular-nums;
+  color:var(--gold);
+  background:rgba(94,184,255,0.12);
+  border:1px solid rgba(94,184,255,0.25);
+  border-radius:8px;
+  padding:4px 8px;
+  white-space:nowrap;
+}
+.day-routine-task{
+  font:14px/1.45 var(--sans);
+  color:var(--parchment);
+  min-width:0;
+  word-break:break-word;
+}
+.schedule-seq{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:rgba(94,184,255,0.16);
+  border:1px solid rgba(94,184,255,0.32);
+  color:var(--gold);
+  font:700 11px/20px var(--sans);
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.day-routine-note{
+  margin:0 0 12px;
+  font:12.5px/1.5 var(--sans);
+  color:var(--muted);
+}
+.schedule-row-time{
+  background:transparent;
+  border:none;
+  border-radius:8px;
+  color:var(--gold);
+  font:600 12.5px/1.3 var(--sans);
+  font-variant-numeric:tabular-nums;
+  padding:4px 3px;
+  width:auto;
+  outline:none;
+  color-scheme:dark;
+}
+.schedule-row-task{
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:9px;
+  color:var(--parchment);
+  font:13.5px/1.4 var(--sans);
+  padding:4px 7px;
+  min-width:0;
+  width:100%;
+  outline:none;
+}
+.schedule-row-task:hover{
+  background:rgba(255,255,255,0.05);
+}
+.schedule-row-task:focus{
+  border-color:var(--panel-line);
+  background:rgba(255,255,255,0.09);
+}
+.schedule-actions{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.schedule-icon-btn{
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.08);
+  color:#c3d0e2;
+  font:600 12px/1 var(--sans);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  transition:background .12s, color .12s, border-color .12s;
+}
+.schedule-icon-btn:hover:not(:disabled){
+  background:rgba(255,255,255,0.14);
+  border-color:var(--panel-line);
+  color:var(--parchment);
+}
+.schedule-icon-btn.del:hover{
+  background:rgba(239,68,68,0.20);
+  border-color:rgba(239,68,68,0.45);
+  color:#fecaca;
+}
+.schedule-icon-btn:disabled{
+  opacity:0.28;
+  cursor:default;
+}
+.schedule-empty{
+  padding:12px 14px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.04);
+  border:1px dashed var(--panel-line);
+  color:var(--muted);
+  font:12.5px/1.55 var(--sans);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
 @media (max-width:700px){
   .day-brief-box{ padding:18px 16px 22px; }
   .day-brief-body{ grid-template-columns:1fr; }
@@ -465,6 +902,22 @@ h1{
   .day-brief-name{ font-size:27px; }
   .day-brief-text{ font-size:15.5px; }
   .day-brief-note{ font-size:18px; }
+  .routine-bar{ flex-wrap:wrap; }
+  .routine-summary{ max-width:100%; white-space:normal; }
+  .schedule-form{ grid-template-columns:minmax(0,1fr) auto; }
+  .schedule-form .schedule-task-input{ grid-column:1 / -1; grid-row:1; }
+  .schedule-form .routine-time-range{ grid-column:1 / -1; grid-row:2; justify-self:start; max-width:100%; }
+  .schedule-form .routine-scope-select{ grid-column:1; grid-row:3; min-width:0; width:100%; }
+  .schedule-form .schedule-add-btn{ grid-column:2; grid-row:3; }
+  .schedule-form.day-edit-form .routine-time-range{ grid-column:1; grid-row:2; justify-self:start; max-width:100%; }
+  .schedule-form.day-edit-form .schedule-add-btn{ grid-column:2; grid-row:2; }
+  .schedule-item{
+    grid-template-columns:22px minmax(0,1fr) auto;
+    row-gap:6px;
+  }
+  .schedule-item .routine-time-range{ grid-column:2 / -1; grid-row:1; justify-self:start; max-width:100%; }
+  .schedule-row-task{ grid-column:1 / 3; grid-row:2; padding-left:4px; }
+  .schedule-actions{ grid-column:3; grid-row:2; }
 }
 </style>
 </head>
@@ -483,12 +936,48 @@ h1{
       <button class="top-btn glass" id="accountBtn" title="Hesap">👤</button>
       <button class="top-btn glass" id="goalsBtn" title="Hedefleri düzenle">⋮</button>
     </div>
+    <section class="routine-panel glass" id="routinePanel" aria-label="Günlük Rutin">
+      <div class="routine-bar">
+        <div class="routine-bar-left">
+          <span class="routine-title">GÜNLÜK RUTİN</span>
+          <span class="routine-summary" id="routineSummary">Günlere göre saat aralığı ve iş sırası oluştur</span>
+        </div>
+        <button type="button" class="routine-toggle-btn" id="routineToggleBtn" aria-expanded="false">Rutin Oluştur</button>
+      </div>
+      <div class="routine-body" id="routineBody">
+        <p class="routine-hint">Haftanın günlerine göre saat aralığı ve iş sırası belirle. Bir günün penceresinden ise sadece o güne özel değişiklik yapabilirsin.</p>
+        <div class="routine-days-bar">
+          <div class="routine-day-tabs" id="routineDayTabs" role="tablist" aria-label="Haftanın günleri"></div>
+          <div class="routine-copy-actions">
+            <button type="button" class="routine-mini-btn" id="routineCopyWeekdaysBtn" title="Seçili günün rutinini hafta içine kopyala">Hafta İçine Kopyala</button>
+            <button type="button" class="routine-mini-btn" id="routineCopyAllBtn" title="Seçili günün rutinini tüm günlere kopyala">Tüm Günlere Kopyala</button>
+          </div>
+        </div>
+        <form class="schedule-form" id="routineForm">
+          <div class="routine-time-range" aria-label="Saat aralığı">
+            <input type="time" class="schedule-time-input" id="routineStartInput" value="09:00" aria-label="Başlangıç saati">
+            <span class="routine-time-sep" aria-hidden="true">–</span>
+            <input type="time" class="schedule-time-input" id="routineEndInput" value="10:00" aria-label="Bitiş saati">
+          </div>
+          <input type="text" class="schedule-task-input" id="routineTaskInput" placeholder="Rutin işini yaz... (örn. Sabah yürüyüşü, Ders çalışma)" aria-label="Rutin işi">
+          <select class="routine-scope-select" id="routineScopeSelect" aria-label="Eklenecek günler">
+            <option value="selected">Sadece seçili gün</option>
+            <option value="all">Tüm günlere (Pt–Pz)</option>
+            <option value="weekdays">Hafta içi (Pt–Cm)</option>
+            <option value="weekend">Hafta sonu (Ct–Pz)</option>
+          </select>
+          <button type="submit" class="schedule-add-btn">+ Ekle</button>
+        </form>
+        <div id="routineListWrap"></div>
+      </div>
+    </section>
   </header>
   <div class="grid" id="grid"></div>
 </div>
 <script>
 const monthNames = ["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
 const dayLetters = ["Pt","Sl","Çr","Pr","Cm","Ct","Pz"];
+const fullDayNames = ["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"];
 const YEAR = 2026;
 
 function getLocalDateStr(date){
@@ -504,15 +993,70 @@ const REMINDER_KEY = 'reminder-2026';
 const REST_KEY = 'rest-2026';
 const SKIP_KEY = 'skip-2026';
 const JOURNAL_KEY = 'journal-2026';
+const ROUTINE_KEY = 'routine-2026';
+const ROUTINE_WEEK_KEY = 'routine-week-2026';
+const ROUTINE_OVERRIDES_KEY = 'routine-overrides-2026';
 
 let goals = [];
 let completions = {};
 let restDays = {};
 let skipDays = {};
 let journals = {};
+let routineByDay = createEmptyRoutineWeek();
+let routineOverrides = {};
 let reminder = { enabled:false, time:'20:00', lastNotifiedDate:null };
 let currentUser = null;
 let firestoreUnsub = null;
+
+function createEmptyRoutineWeek(){
+  return { '0': [], '1': [], '2': [], '3': [], '4': [], '5': [], '6': [] };
+}
+
+function makeRoutineId(){
+  return 'r' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+function cloneRoutineItem(item, newId = false){
+  const copy = {
+    id: newId ? makeRoutineId() : ((item && item.id) ? item.id : makeRoutineId()),
+    startTime: getRoutineStart(item),
+    endTime: getRoutineEnd(item),
+    task: (item && typeof item.task === 'string') ? item.task : ''
+  };
+  return copy;
+}
+
+function normalizeRoutineList(list){
+  if(!Array.isArray(list)) return [];
+  return sortRoutineItems(list.filter(it => it && typeof it === 'object').map(it => cloneRoutineItem(it, false)));
+}
+
+function normalizeRoutineByDay(rawByDay, legacyItems){
+  const week = createEmptyRoutineWeek();
+  if(rawByDay && typeof rawByDay === 'object' && !Array.isArray(rawByDay)){
+    for(let i = 0; i < 7; i++){
+      const k = String(i);
+      week[k] = normalizeRoutineList(rawByDay[k]);
+    }
+    return week;
+  }
+  if(Array.isArray(legacyItems) && legacyItems.length > 0){
+    const clean = normalizeRoutineList(legacyItems);
+    for(let i = 0; i < 7; i++){
+      week[String(i)] = clean.map(it => cloneRoutineItem(it, true));
+    }
+  }
+  return week;
+}
+
+function normalizeRoutineOverrides(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  Object.keys(raw).forEach(dateStr => {
+    if(Array.isArray(raw[dateStr])) out[dateStr] = normalizeRoutineList(raw[dateStr]);
+  });
+  return out;
+}
 
 function defaultGoals(){
   const list = [];
@@ -531,6 +1075,13 @@ function loadState(){
   catch(e){ skipDays = {}; }
   try{ const j = localStorage.getItem(JOURNAL_KEY); journals = j ? JSON.parse(j) : {}; }
   catch(e){ journals = {}; }
+  let rawWeek = null;
+  let legacyItems = null;
+  try{ const rw = localStorage.getItem(ROUTINE_WEEK_KEY); rawWeek = rw ? JSON.parse(rw) : null; }catch(e){ rawWeek = null; }
+  try{ const rt = localStorage.getItem(ROUTINE_KEY); legacyItems = rt ? JSON.parse(rt) : null; }catch(e){ legacyItems = null; }
+  routineByDay = normalizeRoutineByDay(rawWeek, legacyItems);
+  try{ const ro = localStorage.getItem(ROUTINE_OVERRIDES_KEY); routineOverrides = normalizeRoutineOverrides(ro ? JSON.parse(ro) : null); }
+  catch(e){ routineOverrides = {}; }
   try{ const r = localStorage.getItem(REMINDER_KEY); if(r) reminder = JSON.parse(r); }
   catch(e){}
 }
@@ -538,7 +1089,7 @@ function loadState(){
 function pushToCloud(){
   if(cloudEnabled && currentUser){
     firebase.firestore().collection('users').doc(currentUser.uid)
-      .set({ goals, completions, reminder, restDays, skipDays, journals }).catch(() => {});
+      .set({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides }).catch(() => {});
   }
 }
 function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
@@ -556,6 +1107,67 @@ function saveJournals(immediateCloud = true){
     if(journalCloudTimer) clearTimeout(journalCloudTimer);
     journalCloudTimer = setTimeout(() => { journalCloudTimer = null; pushToCloud(); }, 500);
   }
+}
+let routineCloudTimer = null;
+function saveRoutine(immediateCloud = true){
+  try{ localStorage.setItem(ROUTINE_WEEK_KEY, JSON.stringify(routineByDay)); }catch(e){}
+  if(immediateCloud){
+    if(routineCloudTimer){ clearTimeout(routineCloudTimer); routineCloudTimer = null; }
+    pushToCloud();
+  } else {
+    if(routineCloudTimer) clearTimeout(routineCloudTimer);
+    routineCloudTimer = setTimeout(() => { routineCloudTimer = null; pushToCloud(); }, 500);
+  }
+}
+let overrideCloudTimer = null;
+function saveRoutineOverrides(immediateCloud = true){
+  try{ localStorage.setItem(ROUTINE_OVERRIDES_KEY, JSON.stringify(routineOverrides)); }catch(e){}
+  if(immediateCloud){
+    if(overrideCloudTimer){ clearTimeout(overrideCloudTimer); overrideCloudTimer = null; }
+    pushToCloud();
+  } else {
+    if(overrideCloudTimer) clearTimeout(overrideCloudTimer);
+    overrideCloudTimer = setTimeout(() => { overrideCloudTimer = null; pushToCloud(); }, 500);
+  }
+}
+
+function getRoutineStart(item){
+  return ((item && item.startTime !== undefined ? item.startTime : (item && item.time)) || '').trim();
+}
+function getRoutineEnd(item){
+  return ((item && item.endTime) || '').trim();
+}
+function formatRoutineTime(item){
+  const s = getRoutineStart(item);
+  const e = getRoutineEnd(item);
+  if(s && e) return `${s} – ${e}`;
+  if(s) return s;
+  if(e) return `– ${e}`;
+  return '--:--';
+}
+
+function sortRoutineItems(items){
+  return items
+    .map((item, idx) => ({ item, idx }))
+    .sort((a, b) => {
+      const sa = getRoutineStart(a.item);
+      const sb = getRoutineStart(b.item);
+      if(sa && sb && sa !== sb) return sa.localeCompare(sb);
+      if(sa && !sb) return -1;
+      if(!sa && sb) return 1;
+      const ea = getRoutineEnd(a.item);
+      const eb = getRoutineEnd(b.item);
+      if(ea && eb && ea !== eb) return ea.localeCompare(eb);
+      return a.idx - b.idx;
+    })
+    .map(x => x.item);
+}
+
+function getRoutineForDate(dateStr){
+  const wd = weekdayIndex(dateStr);
+  const isCustom = Object.prototype.hasOwnProperty.call(routineOverrides, dateStr) && Array.isArray(routineOverrides[dateStr]);
+  const items = isCustom ? routineOverrides[dateStr] : (routineByDay[String(wd)] || []);
+  return { items, isCustom, wd };
 }
 
 function weekdayIndex(dateStr){
@@ -1001,6 +1613,338 @@ function openDayModal(dateStr, showSkip = false){
     const storyColumn = document.createElement('section');
     storyColumn.className = 'day-brief-story';
 
+    // ---- Günün Rutini (Ana sayfada günlere göre tanımlanır; buradan sadece o güne özel düzenlenebilir) ----
+    const routineSection = document.createElement('div');
+    routineSection.className = 'day-schedule';
+
+    const routineHead = document.createElement('div');
+    routineHead.className = 'schedule-head';
+    const routineCaption = document.createElement('span');
+    routineCaption.className = 'day-brief-caption';
+    routineCaption.textContent = 'GÜNÜN RUTİNİ';
+    const routineHeadRight = document.createElement('div');
+    routineHeadRight.className = 'schedule-head-right';
+    const routineBadge = document.createElement('span');
+    routineBadge.className = 'schedule-badge';
+
+    const routineEditDayBtn = document.createElement('button');
+    routineEditDayBtn.type = 'button';
+    routineEditDayBtn.className = 'day-routine-edit-btn';
+
+    const routineResetBtn = document.createElement('button');
+    routineResetBtn.type = 'button';
+    routineResetBtn.className = 'day-routine-edit-btn';
+    routineResetBtn.textContent = 'Şablona Dön';
+
+    routineHeadRight.append(routineBadge, routineEditDayBtn, routineResetBtn);
+    routineHead.append(routineCaption, routineHeadRight);
+    routineSection.appendChild(routineHead);
+
+    const routineDayWrap = document.createElement('div');
+    routineSection.appendChild(routineDayWrap);
+
+    let dayRoutineEditMode = false;
+
+    function ensureDayOverride(){
+      if(!Object.prototype.hasOwnProperty.call(routineOverrides, dateStr) || !Array.isArray(routineOverrides[dateStr])){
+        const base = routineByDay[String(wd)] || [];
+        routineOverrides[dateStr] = base.map(it => cloneRoutineItem(it, true));
+      }
+    }
+
+    routineEditDayBtn.addEventListener('click', () => {
+      dayRoutineEditMode = !dayRoutineEditMode;
+      renderDayRoutine();
+    });
+
+    routineResetBtn.addEventListener('click', () => {
+      delete routineOverrides[dateStr];
+      saveRoutineOverrides(true);
+      dayRoutineEditMode = false;
+      renderDayRoutine();
+    });
+
+    function renderDayRoutine(){
+      const { items, isCustom } = getRoutineForDate(dateStr);
+      if(isCustom){
+        routineBadge.textContent = 'Bu güne özel';
+        routineBadge.className = 'schedule-badge custom';
+      } else if(items.length === 0){
+        routineBadge.textContent = 'Boş';
+        routineBadge.className = 'schedule-badge';
+      } else {
+        routineBadge.textContent = `${fullDayNames[wd]} · ${items.length} iş`;
+        routineBadge.className = 'schedule-badge';
+      }
+
+      routineEditDayBtn.textContent = dayRoutineEditMode ? 'Tamamla' : 'Bu Günü Düzenle';
+      routineEditDayBtn.classList.toggle('active', dayRoutineEditMode);
+      routineResetBtn.style.display = isCustom ? '' : 'none';
+
+      routineDayWrap.innerHTML = '';
+
+      if(!dayRoutineEditMode){
+        if(items.length === 0){
+          const empty = document.createElement('div');
+          empty.className = 'schedule-empty';
+          const msg = document.createElement('span');
+          msg.textContent = isCustom
+            ? 'Bu gün için özel rutin boş bırakıldı.'
+            : `${fullDayNames[wd]} günü için henüz rutin oluşturulmadı.`;
+          const actionsWrap = document.createElement('div');
+          actionsWrap.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
+          const addDayBtn = document.createElement('button');
+          addDayBtn.type = 'button';
+          addDayBtn.className = 'schedule-add-btn';
+          addDayBtn.textContent = 'Bu Güne Ekle';
+          addDayBtn.addEventListener('click', () => {
+            dayRoutineEditMode = true;
+            renderDayRoutine();
+          });
+          const goTplBtn = document.createElement('button');
+          goTplBtn.type = 'button';
+          goTplBtn.className = 'day-routine-edit-btn';
+          goTplBtn.textContent = 'Ana Sayfa Rutini';
+          goTplBtn.addEventListener('click', () => {
+            closeModal();
+            openMainRoutineEditor(true, wd);
+          });
+          actionsWrap.append(addDayBtn, goTplBtn);
+          empty.append(msg, actionsWrap);
+          routineDayWrap.appendChild(empty);
+          return;
+        }
+
+        const listEl = document.createElement('div');
+        listEl.className = 'schedule-list';
+        items.forEach((item, idx) => {
+          const row = document.createElement('div');
+          row.className = 'day-routine-row';
+
+          const seq = document.createElement('span');
+          seq.className = 'schedule-seq';
+          seq.textContent = String(idx + 1);
+
+          const timePill = document.createElement('span');
+          timePill.className = 'day-routine-time';
+          timePill.textContent = formatRoutineTime(item);
+
+          const taskText = document.createElement('span');
+          taskText.className = 'day-routine-task';
+          taskText.textContent = item.task;
+
+          row.append(seq, timePill, taskText);
+          listEl.appendChild(row);
+        });
+        routineDayWrap.appendChild(listEl);
+        return;
+      }
+
+      // Gün içine özel düzenleme modu
+      const note = document.createElement('p');
+      note.className = 'day-routine-note';
+      note.textContent = `Burada yaptığın değişiklikler sadece ${d}.${m}.${y} gününü etkiler.`;
+      routineDayWrap.appendChild(note);
+
+      const dayForm = document.createElement('form');
+      dayForm.className = 'schedule-form day-edit-form';
+      dayForm.id = 'dayRoutineForm';
+
+      const rangeBox = document.createElement('div');
+      rangeBox.className = 'routine-time-range';
+      const sIn = document.createElement('input');
+      sIn.type = 'time';
+      sIn.className = 'schedule-time-input';
+      sIn.value = '09:00';
+      sIn.setAttribute('aria-label', 'Başlangıç saati');
+      const sep = document.createElement('span');
+      sep.className = 'routine-time-sep';
+      sep.setAttribute('aria-hidden', 'true');
+      sep.textContent = '–';
+      const eIn = document.createElement('input');
+      eIn.type = 'time';
+      eIn.className = 'schedule-time-input';
+      eIn.value = '10:00';
+      eIn.setAttribute('aria-label', 'Bitiş saati');
+      rangeBox.append(sIn, sep, eIn);
+
+      const tIn = document.createElement('input');
+      tIn.type = 'text';
+      tIn.className = 'schedule-task-input';
+      tIn.placeholder = 'Sadece bu güne rutin ekle...';
+      tIn.setAttribute('aria-label', 'Bu güne özel rutin işi');
+      tIn.addEventListener('input', () => tIn.classList.remove('invalid'));
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'submit';
+      addBtn.className = 'schedule-add-btn';
+      addBtn.textContent = '+ Ekle';
+
+      dayForm.append(rangeBox, tIn, addBtn);
+      dayForm.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const taskText = tIn.value.trim();
+        if(!taskText){
+          tIn.classList.add('invalid');
+          tIn.focus();
+          return;
+        }
+        ensureDayOverride();
+        const next = routineOverrides[dateStr].slice();
+        next.push({
+          id: makeRoutineId(),
+          startTime: (sIn.value || '').trim(),
+          endTime: (eIn.value || '').trim(),
+          task: taskText
+        });
+        routineOverrides[dateStr] = sortRoutineItems(next);
+        saveRoutineOverrides(true);
+        renderDayRoutine();
+        const nextInput = routineDayWrap.querySelector('#dayRoutineForm .schedule-task-input');
+        if(nextInput) nextInput.focus();
+      });
+      routineDayWrap.appendChild(dayForm);
+
+      if(items.length === 0){
+        const emptyEdit = document.createElement('div');
+        emptyEdit.className = 'schedule-empty';
+        emptyEdit.textContent = 'Bu gün için henüz iş yok. Yukarıdan saat aralığı ve iş ekleyebilirsin.';
+        routineDayWrap.appendChild(emptyEdit);
+        return;
+      }
+
+      const ul = document.createElement('ul');
+      ul.className = 'schedule-list';
+      items.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.className = 'schedule-item';
+
+        const seq = document.createElement('span');
+        seq.className = 'schedule-seq';
+        seq.textContent = String(idx + 1);
+
+        const rWrap = document.createElement('div');
+        rWrap.className = 'routine-time-range row';
+
+        const startEl = document.createElement('input');
+        startEl.type = 'time';
+        startEl.className = 'schedule-row-time';
+        startEl.value = getRoutineStart(item);
+        startEl.setAttribute('aria-label', `${idx + 1}. özel rutin başlangıç saati`);
+        startEl.addEventListener('change', () => {
+          ensureDayOverride();
+          routineOverrides[dateStr][idx].startTime = startEl.value;
+          routineOverrides[dateStr] = sortRoutineItems(routineOverrides[dateStr]);
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+
+        const rSep = document.createElement('span');
+        rSep.className = 'routine-time-sep';
+        rSep.setAttribute('aria-hidden', 'true');
+        rSep.textContent = '–';
+
+        const endEl = document.createElement('input');
+        endEl.type = 'time';
+        endEl.className = 'schedule-row-time';
+        endEl.value = getRoutineEnd(item);
+        endEl.setAttribute('aria-label', `${idx + 1}. özel rutin bitiş saati`);
+        endEl.addEventListener('change', () => {
+          ensureDayOverride();
+          routineOverrides[dateStr][idx].endTime = endEl.value;
+          routineOverrides[dateStr] = sortRoutineItems(routineOverrides[dateStr]);
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+
+        rWrap.append(startEl, rSep, endEl);
+
+        const rowTask = document.createElement('input');
+        rowTask.type = 'text';
+        rowTask.className = 'schedule-row-task';
+        rowTask.value = item.task || '';
+        rowTask.setAttribute('aria-label', `${idx + 1}. özel rutin işi`);
+        rowTask.addEventListener('input', () => {
+          ensureDayOverride();
+          routineOverrides[dateStr][idx].task = rowTask.value;
+          saveRoutineOverrides(false);
+        });
+        rowTask.addEventListener('blur', () => {
+          ensureDayOverride();
+          const trimmed = rowTask.value.trim();
+          if(!trimmed){
+            rowTask.value = routineOverrides[dateStr][idx].task;
+          } else {
+            routineOverrides[dateStr][idx].task = trimmed;
+          }
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+
+        const actions = document.createElement('div');
+        actions.className = 'schedule-actions';
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'schedule-icon-btn';
+        upBtn.textContent = '↑';
+        upBtn.title = 'Yukarı taşı';
+        upBtn.setAttribute('aria-label', `Yukarı taşı: ${item.task}`);
+        upBtn.disabled = idx === 0;
+        upBtn.addEventListener('click', () => {
+          if(idx === 0) return;
+          ensureDayOverride();
+          const copy = routineOverrides[dateStr].slice();
+          const tmp = copy[idx - 1];
+          copy[idx - 1] = copy[idx];
+          copy[idx] = tmp;
+          routineOverrides[dateStr] = copy;
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'schedule-icon-btn';
+        downBtn.textContent = '↓';
+        downBtn.title = 'Aşağı taşı';
+        downBtn.setAttribute('aria-label', `Aşağı taşı: ${item.task}`);
+        downBtn.disabled = idx === items.length - 1;
+        downBtn.addEventListener('click', () => {
+          if(idx >= items.length - 1) return;
+          ensureDayOverride();
+          const copy = routineOverrides[dateStr].slice();
+          const tmp = copy[idx + 1];
+          copy[idx + 1] = copy[idx];
+          copy[idx] = tmp;
+          routineOverrides[dateStr] = copy;
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'schedule-icon-btn del';
+        delBtn.textContent = '×';
+        delBtn.title = 'Sil';
+        delBtn.setAttribute('aria-label', `Sil: ${item.task}`);
+        delBtn.addEventListener('click', () => {
+          ensureDayOverride();
+          routineOverrides[dateStr] = routineOverrides[dateStr].filter((_, i) => i !== idx);
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+
+        actions.append(upBtn, downBtn, delBtn);
+        li.append(seq, rWrap, rowTask, actions);
+        ul.appendChild(li);
+      });
+      routineDayWrap.appendChild(ul);
+    }
+
+    renderDayRoutine();
+    storyColumn.appendChild(routineSection);
+
     const journalSection = document.createElement('div');
     journalSection.className = 'day-journal';
     const journalCaption = document.createElement('span');
@@ -1224,7 +2168,7 @@ function openReminderModal(){
 
 // ---------- Yedekleme (dışa aktar / içe aktar) ----------
 function exportBackup(){
-  const data = { goals, completions, reminder, restDays, skipDays, journals, exportedAt: new Date().toISOString() };
+  const data = { goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1247,7 +2191,14 @@ function importBackupFile(file){
       if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
       if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
       if(data.journals && typeof data.journals === 'object') journals = data.journals;
-      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip(); saveJournals();
+      if(data.routineByDay || Array.isArray(data.routineItems)){
+        routineByDay = normalizeRoutineByDay(data.routineByDay, data.routineItems);
+      }
+      if(data.routineOverrides && typeof data.routineOverrides === 'object'){
+        routineOverrides = normalizeRoutineOverrides(data.routineOverrides);
+      }
+      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip(); saveJournals(); saveRoutine(); saveRoutineOverrides();
+      renderRoutineEditor();
       renderGrid(); renderStats();
       alert('Yedek geri yüklendi.');
     }catch(e){
@@ -1312,12 +2263,21 @@ function applyRemoteData(data){
   if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
   if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
   if(data.journals && typeof data.journals === 'object') journals = data.journals;
+  if(data.routineByDay || Array.isArray(data.routineItems)){
+    routineByDay = normalizeRoutineByDay(data.routineByDay, data.routineItems);
+  }
+  if(data.routineOverrides && typeof data.routineOverrides === 'object'){
+    routineOverrides = normalizeRoutineOverrides(data.routineOverrides);
+  }
   try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){}
   try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){}
   try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){}
   try{ localStorage.setItem(REST_KEY, JSON.stringify(restDays)); }catch(e){}
   try{ localStorage.setItem(SKIP_KEY, JSON.stringify(skipDays)); }catch(e){}
   try{ localStorage.setItem(JOURNAL_KEY, JSON.stringify(journals)); }catch(e){}
+  try{ localStorage.setItem(ROUTINE_WEEK_KEY, JSON.stringify(routineByDay)); }catch(e){}
+  try{ localStorage.setItem(ROUTINE_OVERRIDES_KEY, JSON.stringify(routineOverrides)); }catch(e){}
+  renderRoutineEditor();
   renderGrid();
   renderStats();
 }
@@ -1332,7 +2292,7 @@ function initCloudSync(){
       const ref = firebase.firestore().collection('users').doc(user.uid);
       ref.get().then((snap) => {
         if(!snap.exists){
-          ref.set({ goals, completions, reminder, restDays, skipDays, journals });
+          ref.set({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides });
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
@@ -1413,12 +2373,23 @@ function showDayHover(dateStr, anchorEl){
   const feelingText = (entry.feeling && entry.feeling.trim()) ? entry.feeling.trim() : '—';
   const gratitudeText = (entry.gratitude && entry.gratitude.trim()) ? entry.gratitude.trim() : '—';
 
-  dayHoverCard.innerHTML = '';
-  [
+  const hoverItems = [
     { lbl: 'MOD', val: moodText },
     { lbl: 'NASIL HİSSETTİM', val: feelingText },
     { lbl: 'ŞÜKRETTİKLERİM', val: gratitudeText }
-  ].forEach(item => {
+  ];
+  const dayRoutine = getRoutineForDate(dateStr);
+  if(dayRoutine.items.length > 0){
+    const lines = dayRoutine.items.slice(0, 3).map(it => {
+      const t = formatRoutineTime(it);
+      return `${t !== '--:--' ? t + ' · ' : ''}${it.task}`;
+    });
+    if(dayRoutine.items.length > 3) lines.push(`+${dayRoutine.items.length - 3} rutin daha`);
+    hoverItems.push({ lbl: dayRoutine.isCustom ? 'BU GÜNE ÖZEL RUTİN' : 'GÜNÜN RUTİNİ', val: lines.join('\n') });
+  }
+
+  dayHoverCard.innerHTML = '';
+  hoverItems.forEach(item => {
     const row = document.createElement('div');
     row.className = 'day-hover-item';
     const lbl = document.createElement('span');
@@ -1437,7 +2408,12 @@ function showDayHover(dateStr, anchorEl){
   let left = rect.left + (rect.width / 2) - (cardRect.width / 2);
   left = Math.max(12, Math.min(left, window.innerWidth - cardRect.width - 12));
   let top = rect.top - cardRect.height - 8;
-  if(top < 12) top = Math.min(rect.bottom + 8, window.innerHeight - cardRect.height - 12);
+  const routineOpen = routineBodyEl && routineBodyEl.classList.contains('open');
+  const routineBottom = routineOpen ? document.getElementById('routinePanel').getBoundingClientRect().bottom : 0;
+  const overlapsOpenRoutine = routineOpen && top < routineBottom + 8 && (rect.bottom + 8 + cardRect.height <= window.innerHeight - 12);
+  if(top < 12 || overlapsOpenRoutine){
+    top = Math.min(rect.bottom + 8, window.innerHeight - cardRect.height - 12);
+  }
   dayHoverCard.style.left = left + 'px';
   dayHoverCard.style.top = top + 'px';
 }
@@ -1582,8 +2558,305 @@ setInterval(checkReminder, 20000);
 //   });
 // }
 
+// ---------- Ana Sayfa: Günlere Göre Rutin Oluşturucu ----------
+const routineBodyEl = document.getElementById('routineBody');
+const routineToggleBtn = document.getElementById('routineToggleBtn');
+const routineSummaryEl = document.getElementById('routineSummary');
+const routineDayTabsEl = document.getElementById('routineDayTabs');
+const routineCopyWeekdaysBtn = document.getElementById('routineCopyWeekdaysBtn');
+const routineCopyAllBtn = document.getElementById('routineCopyAllBtn');
+const routineFormEl = document.getElementById('routineForm');
+const routineStartInputEl = document.getElementById('routineStartInput');
+const routineEndInputEl = document.getElementById('routineEndInput');
+const routineTaskInputEl = document.getElementById('routineTaskInput');
+const routineScopeSelectEl = document.getElementById('routineScopeSelect');
+const routineListWrapEl = document.getElementById('routineListWrap');
+
+let selectedRoutineDay = weekdayIndex(todayStr);
+
+function getTotalRoutineItemsCount(){
+  let sum = 0;
+  for(let i = 0; i < 7; i++) sum += (routineByDay[String(i)] || []).length;
+  return sum;
+}
+
+function setRoutinePanelOpen(open){
+  routineBodyEl.classList.toggle('open', open);
+  routineToggleBtn.classList.toggle('open', open);
+  routineToggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  updateRoutineToggleLabel();
+}
+
+function updateRoutineToggleLabel(){
+  const isOpen = routineBodyEl.classList.contains('open');
+  if(isOpen){
+    routineToggleBtn.textContent = 'Kapat';
+  } else {
+    routineToggleBtn.textContent = getTotalRoutineItemsCount() > 0 ? 'Rutini Düzenle' : 'Rutin Oluştur';
+  }
+}
+
+function openMainRoutineEditor(focusInput = false, dayIdx = null){
+  if(dayIdx !== null && dayIdx >= 0 && dayIdx <= 6){
+    selectedRoutineDay = dayIdx;
+    renderRoutineEditor();
+  }
+  setRoutinePanelOpen(true);
+  document.getElementById('routinePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if(focusInput) setTimeout(() => routineTaskInputEl.focus(), 120);
+}
+
+function renderRoutineEditor(){
+  updateRoutineToggleLabel();
+  const activeKey = String(selectedRoutineDay);
+  const currentItems = routineByDay[activeKey] || [];
+
+  // Özet satırı: seçili günün rutinini özetle
+  if(currentItems.length === 0){
+    const totalCount = getTotalRoutineItemsCount();
+    routineSummaryEl.textContent = totalCount === 0
+      ? 'Günlere göre saat aralığı ve iş sırası oluştur'
+      : `${fullDayNames[selectedRoutineDay]} boş · Haftalık toplam ${totalCount} iş`;
+  } else {
+    const preview = currentItems.slice(0, 3).map(it => {
+      const t = formatRoutineTime(it);
+      return `${t !== '--:--' ? t + ' ' : ''}${it.task}`;
+    }).join('  ·  ');
+    routineSummaryEl.textContent = `${fullDayNames[selectedRoutineDay]} (${currentItems.length} iş): ${preview}${currentItems.length > 3 ? ' ...' : ''}`;
+  }
+
+  // Haftanın günleri sekmeleri
+  routineDayTabsEl.innerHTML = '';
+  dayLetters.forEach((shortLbl, idx) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.role = 'tab';
+    const isSel = idx === selectedRoutineDay;
+    btn.className = 'routine-day-tab' + (isSel ? ' active' : '');
+    btn.setAttribute('aria-selected', isSel ? 'true' : 'false');
+    btn.title = fullDayNames[idx];
+
+    const lblSpan = document.createElement('span');
+    lblSpan.textContent = shortLbl;
+    btn.appendChild(lblSpan);
+
+    const dayCount = (routineByDay[String(idx)] || []).length;
+    if(dayCount > 0){
+      const countSpan = document.createElement('span');
+      countSpan.className = 'routine-day-count';
+      countSpan.textContent = `(${dayCount})`;
+      btn.appendChild(countSpan);
+    }
+
+    btn.addEventListener('click', () => {
+      selectedRoutineDay = idx;
+      renderRoutineEditor();
+    });
+    routineDayTabsEl.appendChild(btn);
+  });
+
+  const selOpt = routineScopeSelectEl.querySelector('option[value="selected"]');
+  if(selOpt) selOpt.textContent = `Sadece ${fullDayNames[selectedRoutineDay]}`;
+  routineCopyWeekdaysBtn.disabled = currentItems.length === 0;
+  routineCopyAllBtn.disabled = currentItems.length === 0;
+
+  routineListWrapEl.innerHTML = '';
+  if(currentItems.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'schedule-empty';
+    empty.textContent = `${fullDayNames[selectedRoutineDay]} günü için henüz rutin eklenmedi. Yukarıdan saat aralığı ve iş ekleyebilirsin.`;
+    routineListWrapEl.appendChild(empty);
+    return;
+  }
+
+  const ul = document.createElement('ul');
+  ul.className = 'schedule-list';
+  currentItems.forEach((item, idx) => {
+    const li = document.createElement('li');
+    li.className = 'schedule-item';
+
+    const seq = document.createElement('span');
+    seq.className = 'schedule-seq';
+    seq.textContent = String(idx + 1);
+
+    const rangeWrap = document.createElement('div');
+    rangeWrap.className = 'routine-time-range row';
+
+    const startTimeEl = document.createElement('input');
+    startTimeEl.type = 'time';
+    startTimeEl.className = 'schedule-row-time';
+    startTimeEl.value = getRoutineStart(item);
+    startTimeEl.setAttribute('aria-label', `${fullDayNames[selectedRoutineDay]} ${idx + 1}. rutin başlangıç saati`);
+    startTimeEl.addEventListener('change', () => {
+      item.startTime = startTimeEl.value;
+      delete item.time;
+      routineByDay[activeKey] = sortRoutineItems(routineByDay[activeKey]);
+      saveRoutine(true);
+      renderRoutineEditor();
+    });
+
+    const sepEl = document.createElement('span');
+    sepEl.className = 'routine-time-sep';
+    sepEl.setAttribute('aria-hidden', 'true');
+    sepEl.textContent = '–';
+
+    const endTimeEl = document.createElement('input');
+    endTimeEl.type = 'time';
+    endTimeEl.className = 'schedule-row-time';
+    endTimeEl.value = getRoutineEnd(item);
+    endTimeEl.setAttribute('aria-label', `${fullDayNames[selectedRoutineDay]} ${idx + 1}. rutin bitiş saati`);
+    endTimeEl.addEventListener('change', () => {
+      item.endTime = endTimeEl.value;
+      if(item.startTime === undefined && item.time){
+        item.startTime = item.time;
+        delete item.time;
+      }
+      routineByDay[activeKey] = sortRoutineItems(routineByDay[activeKey]);
+      saveRoutine(true);
+      renderRoutineEditor();
+    });
+
+    rangeWrap.append(startTimeEl, sepEl, endTimeEl);
+
+    const rowTask = document.createElement('input');
+    rowTask.type = 'text';
+    rowTask.className = 'schedule-row-task';
+    rowTask.value = item.task || '';
+    rowTask.setAttribute('aria-label', `${fullDayNames[selectedRoutineDay]} ${idx + 1}. rutin işi`);
+    rowTask.addEventListener('input', () => {
+      item.task = rowTask.value;
+      saveRoutine(false);
+    });
+    rowTask.addEventListener('blur', () => {
+      const trimmed = rowTask.value.trim();
+      if(!trimmed){
+        rowTask.value = item.task;
+      } else {
+        item.task = trimmed;
+      }
+      saveRoutine(true);
+      renderRoutineEditor();
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'schedule-actions';
+
+    const upBtn = document.createElement('button');
+    upBtn.type = 'button';
+    upBtn.className = 'schedule-icon-btn';
+    upBtn.textContent = '↑';
+    upBtn.title = 'Yukarı taşı';
+    upBtn.setAttribute('aria-label', `Yukarı taşı: ${item.task}`);
+    upBtn.disabled = idx === 0;
+    upBtn.addEventListener('click', () => {
+      if(idx === 0) return;
+      const copy = routineByDay[activeKey].slice();
+      const tmp = copy[idx - 1];
+      copy[idx - 1] = copy[idx];
+      copy[idx] = tmp;
+      routineByDay[activeKey] = copy;
+      saveRoutine(true);
+      renderRoutineEditor();
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.type = 'button';
+    downBtn.className = 'schedule-icon-btn';
+    downBtn.textContent = '↓';
+    downBtn.title = 'Aşağı taşı';
+    downBtn.setAttribute('aria-label', `Aşağı taşı: ${item.task}`);
+    downBtn.disabled = idx === currentItems.length - 1;
+    downBtn.addEventListener('click', () => {
+      if(idx >= routineByDay[activeKey].length - 1) return;
+      const copy = routineByDay[activeKey].slice();
+      const tmp = copy[idx + 1];
+      copy[idx + 1] = copy[idx];
+      copy[idx] = tmp;
+      routineByDay[activeKey] = copy;
+      saveRoutine(true);
+      renderRoutineEditor();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'schedule-icon-btn del';
+    delBtn.textContent = '×';
+    delBtn.title = 'Sil';
+    delBtn.setAttribute('aria-label', `Sil: ${item.task}`);
+    delBtn.addEventListener('click', () => {
+      routineByDay[activeKey] = routineByDay[activeKey].filter((_, i) => i !== idx);
+      saveRoutine(true);
+      renderRoutineEditor();
+    });
+
+    actions.append(upBtn, downBtn, delBtn);
+    li.append(seq, rangeWrap, rowTask, actions);
+    ul.appendChild(li);
+  });
+  routineListWrapEl.appendChild(ul);
+}
+
+function copySelectedDayRoutineTo(targetDays){
+  const srcItems = routineByDay[String(selectedRoutineDay)] || [];
+  if(srcItems.length === 0) return;
+  targetDays.forEach(dIdx => {
+    if(dIdx === selectedRoutineDay) return;
+    routineByDay[String(dIdx)] = sortRoutineItems(srcItems.map(it => cloneRoutineItem(it, true)));
+  });
+  saveRoutine(true);
+  renderRoutineEditor();
+}
+
+routineCopyWeekdaysBtn.addEventListener('click', () => copySelectedDayRoutineTo([0,1,2,3,4]));
+routineCopyAllBtn.addEventListener('click', () => copySelectedDayRoutineTo([0,1,2,3,4,5,6]));
+
+routineToggleBtn.addEventListener('click', () => {
+  const nextOpen = !routineBodyEl.classList.contains('open');
+  setRoutinePanelOpen(nextOpen);
+  if(nextOpen) routineTaskInputEl.focus();
+});
+
+routineTaskInputEl.addEventListener('input', () => routineTaskInputEl.classList.remove('invalid'));
+routineFormEl.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const taskText = routineTaskInputEl.value.trim();
+  if(!taskText){
+    routineTaskInputEl.classList.add('invalid');
+    routineTaskInputEl.focus();
+    return;
+  }
+  const scope = routineScopeSelectEl.value;
+  let targetDays = [selectedRoutineDay];
+  if(scope === 'all') targetDays = [0,1,2,3,4,5,6];
+  else if(scope === 'weekdays') targetDays = [0,1,2,3,4];
+  else if(scope === 'weekend') targetDays = [5,6];
+
+  const startVal = (routineStartInputEl.value || '').trim();
+  const endVal = (routineEndInputEl.value || '').trim();
+
+  targetDays.forEach(dIdx => {
+    const k = String(dIdx);
+    const next = (routineByDay[k] || []).slice();
+    next.push({
+      id: makeRoutineId(),
+      startTime: startVal,
+      endTime: endVal,
+      task: taskText
+    });
+    routineByDay[k] = sortRoutineItems(next);
+  });
+
+  saveRoutine(true);
+  routineTaskInputEl.value = '';
+  routineTaskInputEl.classList.remove('invalid');
+  renderRoutineEditor();
+  routineTaskInputEl.focus();
+});
+
 (function init(){
   loadState();
+  selectedRoutineDay = weekdayIndex(todayStr);
+  renderRoutineEditor();
   renderGrid();
   renderStats();
   initCloudSync();
