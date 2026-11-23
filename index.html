@@ -950,7 +950,9 @@ h1{
           <div class="routine-day-tabs" id="routineDayTabs" role="tablist" aria-label="Haftanın günleri"></div>
           <div class="routine-copy-actions">
             <button type="button" class="routine-mini-btn" id="routineCopyWeekdaysBtn" title="Seçili günün rutinini hafta içine kopyala">Hafta İçine Kopyala</button>
+            <button type="button" class="routine-mini-btn" id="routineCopyWeekendBtn" title="Seçili günün rutinini hafta sonuna kopyala">Hafta Sonuna Kopyala</button>
             <button type="button" class="routine-mini-btn" id="routineCopyAllBtn" title="Seçili günün rutinini tüm günlere kopyala">Tüm Günlere Kopyala</button>
+            <button type="button" class="routine-mini-btn" id="routineSortTimeBtn" title="Seçili günün rutinini başlangıç saatine göre sırala">Saate Göre Sırala</button>
           </div>
         </div>
         <form class="schedule-form" id="routineForm">
@@ -1028,7 +1030,7 @@ function cloneRoutineItem(item, newId = false){
 
 function normalizeRoutineList(list){
   if(!Array.isArray(list)) return [];
-  return sortRoutineItems(list.filter(it => it && typeof it === 'object').map(it => cloneRoutineItem(it, false)));
+  return list.filter(it => it && typeof it === 'object').map(it => cloneRoutineItem(it, false));
 }
 
 function normalizeRoutineByDay(rawByDay, legacyItems){
@@ -1088,8 +1090,11 @@ function loadState(){
 
 function pushToCloud(){
   if(cloudEnabled && currentUser){
-    firebase.firestore().collection('users').doc(currentUser.uid)
-      .set({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides }).catch(() => {});
+    try{
+      const payload = JSON.parse(JSON.stringify({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides }));
+      firebase.firestore().collection('users').doc(currentUser.uid)
+        .set(payload).catch(() => {});
+    }catch(e){}
   }
 }
 function saveGoals(){ try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){} pushToCloud(); }
@@ -1161,6 +1166,36 @@ function sortRoutineItems(items){
       return a.idx - b.idx;
     })
     .map(x => x.item);
+}
+
+function insertRoutineItem(list, newItem){
+  const next = Array.isArray(list) ? list.slice() : [];
+  const ns = getRoutineStart(newItem);
+  if(!ns){
+    next.push(newItem);
+    return next;
+  }
+  const ne = getRoutineEnd(newItem);
+  let insertAt = 0;
+  let foundLe = false;
+  for(let i = 0; i < next.length; i++){
+    const cs = getRoutineStart(next[i]);
+    if(!cs) continue;
+    if(cs < ns){
+      insertAt = i + 1;
+      foundLe = true;
+    } else if(cs === ns){
+      const ce = getRoutineEnd(next[i]);
+      if(!ne || !ce || ce <= ne){
+        insertAt = i + 1;
+        foundLe = true;
+      } else if(!foundLe){
+        insertAt = i;
+      }
+    }
+  }
+  next.splice(insertAt, 0, newItem);
+  return next;
 }
 
 function getRoutineForDate(dateStr){
@@ -1790,20 +1825,35 @@ function openDayModal(dateStr, showSkip = false){
           return;
         }
         ensureDayOverride();
-        const next = routineOverrides[dateStr].slice();
-        next.push({
+        routineOverrides[dateStr] = insertRoutineItem(routineOverrides[dateStr], {
           id: makeRoutineId(),
           startTime: (sIn.value || '').trim(),
           endTime: (eIn.value || '').trim(),
           task: taskText
         });
-        routineOverrides[dateStr] = sortRoutineItems(next);
         saveRoutineOverrides(true);
         renderDayRoutine();
         const nextInput = routineDayWrap.querySelector('#dayRoutineForm .schedule-task-input');
         if(nextInput) nextInput.focus();
       });
       routineDayWrap.appendChild(dayForm);
+
+      if(items.length > 1){
+        const sortBar = document.createElement('div');
+        sortBar.style.cssText = 'display:flex; justify-content:flex-end; margin:-6px 0 10px;';
+        const sortDayBtn = document.createElement('button');
+        sortDayBtn.type = 'button';
+        sortDayBtn.className = 'routine-mini-btn';
+        sortDayBtn.textContent = 'Saate Göre Sırala';
+        sortDayBtn.addEventListener('click', () => {
+          ensureDayOverride();
+          routineOverrides[dateStr] = sortRoutineItems(routineOverrides[dateStr]);
+          saveRoutineOverrides(true);
+          renderDayRoutine();
+        });
+        sortBar.appendChild(sortDayBtn);
+        routineDayWrap.appendChild(sortBar);
+      }
 
       if(items.length === 0){
         const emptyEdit = document.createElement('div');
@@ -1834,9 +1884,7 @@ function openDayModal(dateStr, showSkip = false){
         startEl.addEventListener('change', () => {
           ensureDayOverride();
           routineOverrides[dateStr][idx].startTime = startEl.value;
-          routineOverrides[dateStr] = sortRoutineItems(routineOverrides[dateStr]);
           saveRoutineOverrides(true);
-          renderDayRoutine();
         });
 
         const rSep = document.createElement('span');
@@ -1852,9 +1900,7 @@ function openDayModal(dateStr, showSkip = false){
         endEl.addEventListener('change', () => {
           ensureDayOverride();
           routineOverrides[dateStr][idx].endTime = endEl.value;
-          routineOverrides[dateStr] = sortRoutineItems(routineOverrides[dateStr]);
           saveRoutineOverrides(true);
-          renderDayRoutine();
         });
 
         rWrap.append(startEl, rSep, endEl);
@@ -1876,9 +1922,9 @@ function openDayModal(dateStr, showSkip = false){
             rowTask.value = routineOverrides[dateStr][idx].task;
           } else {
             routineOverrides[dateStr][idx].task = trimmed;
+            rowTask.value = trimmed;
           }
           saveRoutineOverrides(true);
-          renderDayRoutine();
         });
 
         const actions = document.createElement('div');
@@ -2296,12 +2342,23 @@ function initCloudSync(){
         }
       });
       firestoreUnsub = ref.onSnapshot((snap) => {
-        if(snap.metadata.hasPendingWrites) return; // kendi yazdığımız veriyi geri okuyup üzerine yazma
+        if(snap.metadata.hasPendingWrites || journalCloudTimer || routineCloudTimer || overrideCloudTimer) return;
         if(snap.exists) applyRemoteData(snap.data());
       });
     }
   });
 }
+
+function flushPendingCloudSync(){
+  if(journalCloudTimer || routineCloudTimer || overrideCloudTimer){
+    if(journalCloudTimer){ clearTimeout(journalCloudTimer); journalCloudTimer = null; }
+    if(routineCloudTimer){ clearTimeout(routineCloudTimer); routineCloudTimer = null; }
+    if(overrideCloudTimer){ clearTimeout(overrideCloudTimer); overrideCloudTimer = null; }
+    pushToCloud();
+  }
+}
+window.addEventListener('pagehide', flushPendingCloudSync);
+window.addEventListener('beforeunload', flushPendingCloudSync);
 
 function openAccountModal(){
   openModal('Hesap', (body) => {
@@ -2564,7 +2621,9 @@ const routineToggleBtn = document.getElementById('routineToggleBtn');
 const routineSummaryEl = document.getElementById('routineSummary');
 const routineDayTabsEl = document.getElementById('routineDayTabs');
 const routineCopyWeekdaysBtn = document.getElementById('routineCopyWeekdaysBtn');
+const routineCopyWeekendBtn = document.getElementById('routineCopyWeekendBtn');
 const routineCopyAllBtn = document.getElementById('routineCopyAllBtn');
+const routineSortTimeBtn = document.getElementById('routineSortTimeBtn');
 const routineFormEl = document.getElementById('routineForm');
 const routineStartInputEl = document.getElementById('routineStartInput');
 const routineEndInputEl = document.getElementById('routineEndInput');
@@ -2596,22 +2655,8 @@ function updateRoutineToggleLabel(){
   }
 }
 
-function openMainRoutineEditor(focusInput = false, dayIdx = null){
-  if(dayIdx !== null && dayIdx >= 0 && dayIdx <= 6){
-    selectedRoutineDay = dayIdx;
-    renderRoutineEditor();
-  }
-  setRoutinePanelOpen(true);
-  document.getElementById('routinePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  if(focusInput) setTimeout(() => routineTaskInputEl.focus(), 120);
-}
-
-function renderRoutineEditor(){
-  updateRoutineToggleLabel();
-  const activeKey = String(selectedRoutineDay);
-  const currentItems = routineByDay[activeKey] || [];
-
-  // Özet satırı: seçili günün rutinini özetle
+function updateRoutineSummaryOnly(){
+  const currentItems = routineByDay[String(selectedRoutineDay)] || [];
   if(currentItems.length === 0){
     const totalCount = getTotalRoutineItemsCount();
     routineSummaryEl.textContent = totalCount === 0
@@ -2624,6 +2669,32 @@ function renderRoutineEditor(){
     }).join('  ·  ');
     routineSummaryEl.textContent = `${fullDayNames[selectedRoutineDay]} (${currentItems.length} iş): ${preview}${currentItems.length > 3 ? ' ...' : ''}`;
   }
+}
+
+function openMainRoutineEditor(focusInput = false, dayIdx = null){
+  if(dayIdx !== null && dayIdx >= 0 && dayIdx <= 6){
+    selectedRoutineDay = dayIdx;
+    syncScopeWithSelectedDay();
+    renderRoutineEditor();
+  }
+  setRoutinePanelOpen(true);
+  document.getElementById('routinePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if(focusInput) setTimeout(() => routineTaskInputEl.focus(), 120);
+}
+
+function syncScopeWithSelectedDay(){
+  const scope = routineScopeSelectEl.value;
+  if((scope === 'weekdays' && selectedRoutineDay >= 5) || (scope === 'weekend' && selectedRoutineDay < 5)){
+    routineScopeSelectEl.value = 'selected';
+  }
+}
+
+function renderRoutineEditor(){
+  updateRoutineToggleLabel();
+  const activeKey = String(selectedRoutineDay);
+  const currentItems = routineByDay[activeKey] || [];
+
+  updateRoutineSummaryOnly();
 
   // Haftanın günleri sekmeleri
   routineDayTabsEl.innerHTML = '';
@@ -2650,6 +2721,7 @@ function renderRoutineEditor(){
 
     btn.addEventListener('click', () => {
       selectedRoutineDay = idx;
+      syncScopeWithSelectedDay();
       renderRoutineEditor();
     });
     routineDayTabsEl.appendChild(btn);
@@ -2658,7 +2730,9 @@ function renderRoutineEditor(){
   const selOpt = routineScopeSelectEl.querySelector('option[value="selected"]');
   if(selOpt) selOpt.textContent = `Sadece ${fullDayNames[selectedRoutineDay]}`;
   routineCopyWeekdaysBtn.disabled = currentItems.length === 0;
+  routineCopyWeekendBtn.disabled = currentItems.length === 0;
   routineCopyAllBtn.disabled = currentItems.length === 0;
+  routineSortTimeBtn.disabled = currentItems.length < 2;
 
   routineListWrapEl.innerHTML = '';
   if(currentItems.length === 0){
@@ -2690,9 +2764,8 @@ function renderRoutineEditor(){
     startTimeEl.addEventListener('change', () => {
       item.startTime = startTimeEl.value;
       delete item.time;
-      routineByDay[activeKey] = sortRoutineItems(routineByDay[activeKey]);
       saveRoutine(true);
-      renderRoutineEditor();
+      updateRoutineSummaryOnly();
     });
 
     const sepEl = document.createElement('span');
@@ -2711,9 +2784,8 @@ function renderRoutineEditor(){
         item.startTime = item.time;
         delete item.time;
       }
-      routineByDay[activeKey] = sortRoutineItems(routineByDay[activeKey]);
       saveRoutine(true);
-      renderRoutineEditor();
+      updateRoutineSummaryOnly();
     });
 
     rangeWrap.append(startTimeEl, sepEl, endTimeEl);
@@ -2726,6 +2798,7 @@ function renderRoutineEditor(){
     rowTask.addEventListener('input', () => {
       item.task = rowTask.value;
       saveRoutine(false);
+      updateRoutineSummaryOnly();
     });
     rowTask.addEventListener('blur', () => {
       const trimmed = rowTask.value.trim();
@@ -2733,9 +2806,10 @@ function renderRoutineEditor(){
         rowTask.value = item.task;
       } else {
         item.task = trimmed;
+        rowTask.value = trimmed;
       }
       saveRoutine(true);
-      renderRoutineEditor();
+      updateRoutineSummaryOnly();
     });
 
     const actions = document.createElement('div');
@@ -2801,14 +2875,21 @@ function copySelectedDayRoutineTo(targetDays){
   if(srcItems.length === 0) return;
   targetDays.forEach(dIdx => {
     if(dIdx === selectedRoutineDay) return;
-    routineByDay[String(dIdx)] = sortRoutineItems(srcItems.map(it => cloneRoutineItem(it, true)));
+    routineByDay[String(dIdx)] = srcItems.map(it => cloneRoutineItem(it, true));
   });
   saveRoutine(true);
   renderRoutineEditor();
 }
 
 routineCopyWeekdaysBtn.addEventListener('click', () => copySelectedDayRoutineTo([0,1,2,3,4]));
+routineCopyWeekendBtn.addEventListener('click', () => copySelectedDayRoutineTo([5,6]));
 routineCopyAllBtn.addEventListener('click', () => copySelectedDayRoutineTo([0,1,2,3,4,5,6]));
+routineSortTimeBtn.addEventListener('click', () => {
+  const activeKey = String(selectedRoutineDay);
+  routineByDay[activeKey] = sortRoutineItems(routineByDay[activeKey] || []);
+  saveRoutine(true);
+  renderRoutineEditor();
+});
 
 routineToggleBtn.addEventListener('click', () => {
   const nextOpen = !routineBodyEl.classList.contains('open');
@@ -2836,15 +2917,19 @@ routineFormEl.addEventListener('submit', (e) => {
 
   targetDays.forEach(dIdx => {
     const k = String(dIdx);
-    const next = (routineByDay[k] || []).slice();
-    next.push({
+    routineByDay[k] = insertRoutineItem(routineByDay[k], {
       id: makeRoutineId(),
       startTime: startVal,
       endTime: endVal,
       task: taskText
     });
-    routineByDay[k] = sortRoutineItems(next);
   });
+
+  if(scope === 'weekend' && selectedRoutineDay < 5){
+    selectedRoutineDay = 5;
+  } else if(scope === 'weekdays' && selectedRoutineDay >= 5){
+    selectedRoutineDay = 0;
+  }
 
   saveRoutine(true);
   routineTaskInputEl.value = '';
