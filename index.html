@@ -563,6 +563,91 @@ h1{
   background:rgba(124,108,230,0.28);
   border-color:rgba(179,168,255,0.55);
 }
+.schedule-badge.minimum{
+  color:#fde68a;
+  background:rgba(245,158,11,0.16);
+  border-color:rgba(251,191,36,0.42);
+}
+.routine-mode-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.routine-mode-tabs{
+  display:inline-flex;
+  align-items:center;
+  flex-wrap:wrap;
+  max-width:100%;
+  gap:6px;
+  padding:4px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--panel-line);
+}
+.routine-mode-tab{
+  background:transparent;
+  border:1px solid transparent;
+  color:var(--muted);
+  border-radius:9px;
+  padding:6px 12px;
+  font:600 12px/1.2 var(--sans);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.routine-mode-tab:hover{
+  background:rgba(255,255,255,0.08);
+  color:var(--parchment);
+}
+.routine-mode-tab.active{
+  background:rgba(63,142,217,0.32);
+  border-color:rgba(94,184,255,0.62);
+  color:#fff;
+}
+.routine-mode-tab.minimum.active{
+  background:rgba(245,158,11,0.22);
+  border-color:rgba(251,191,36,0.58);
+  color:#fef3c7;
+}
+.day-routine-switcher{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.day-mode-btn{
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--panel-line);
+  color:var(--muted);
+  border-radius:11px;
+  padding:6px 12px;
+  font:600 12px/1.2 var(--sans);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:background .15s, border-color .15s, color .15s;
+}
+.day-mode-btn:hover{
+  background:rgba(255,255,255,0.12);
+  color:var(--parchment);
+}
+.day-mode-btn.active{
+  background:rgba(63,142,217,0.30);
+  border-color:rgba(94,184,255,0.62);
+  color:#fff;
+}
+.day-mode-btn.minimum.active{
+  background:rgba(245,158,11,0.22);
+  border-color:rgba(251,191,36,0.58);
+  color:#fef3c7;
+}
 .day-routine-edit-btn{
   background:rgba(255,255,255,0.07);
   border:1px solid var(--panel-line);
@@ -953,7 +1038,10 @@ h1{
         <button type="button" class="routine-toggle-btn" id="routineToggleBtn" aria-expanded="false">Rutin Oluştur</button>
       </div>
       <div class="routine-body" id="routineBody">
-        <p class="routine-hint">Haftanın günlerine göre saat aralığı ve iş sırası belirle. Bir günün penceresinden ise sadece o güne özel değişiklik yapabilirsin.</p>
+        <div class="routine-mode-bar">
+          <div class="routine-mode-tabs" id="routineModeTabs" role="tablist" aria-label="Rutin türü"></div>
+        </div>
+        <p class="routine-hint" id="routineHint">Haftanın günlerine göre saat aralığı ve iş sırası belirle. Bir günün penceresinden ise sadece o güne özel değişiklik yapabilirsin.</p>
         <div class="routine-days-bar">
           <div class="routine-day-tabs" id="routineDayTabs" role="tablist" aria-label="Haftanın günleri"></div>
           <div class="routine-copy-actions">
@@ -1005,7 +1093,10 @@ const SKIP_KEY = 'skip-2026';
 const JOURNAL_KEY = 'journal-2026';
 const ROUTINE_KEY = 'routine-2026';
 const ROUTINE_WEEK_KEY = 'routine-week-2026';
+const MIN_ROUTINE_WEEK_KEY = 'min-routine-week-2026';
 const ROUTINE_OVERRIDES_KEY = 'routine-overrides-2026';
+const DAY_ROUTINE_MODE_KEY = 'day-routine-mode-2026';
+const ROUTINE_UPDATED_KEY = 'routine-updated-2026';
 
 let goals = [];
 let completions = {};
@@ -1013,7 +1104,12 @@ let restDays = {};
 let skipDays = {};
 let journals = {};
 let routineByDay = createEmptyRoutineWeek();
+let minRoutineByDay = createEmptyRoutineWeek();
 let routineOverrides = {};
+let dayRoutineModes = {};
+let routineUpdatedAt = 0;
+let hasRemoteSyncCompleted = false;
+let activeDayRoutineRefresh = null;
 let reminder = { enabled:false, time:'20:00', lastNotifiedDate:null };
 let currentUser = null;
 let firestoreUnsub = null;
@@ -1068,6 +1164,34 @@ function normalizeRoutineOverrides(raw){
   return out;
 }
 
+function normalizeDayRoutineModes(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  Object.keys(raw).forEach(dateStr => {
+    if(raw[dateStr] === 'minimum') out[dateStr] = 'minimum';
+  });
+  return out;
+}
+
+function getDayRoutineMode(dateStr){
+  return dayRoutineModes[dateStr] === 'minimum' ? 'minimum' : 'normal';
+}
+
+function countRoutineWeekItems(weekObj){
+  if(!weekObj || typeof weekObj !== 'object' || Array.isArray(weekObj)) return 0;
+  let sum = 0;
+  for(let i = 0; i < 7; i++){
+    const arr = weekObj[String(i)];
+    if(Array.isArray(arr)) sum += arr.length;
+  }
+  return sum;
+}
+
+function touchRoutineUpdatedAt(){
+  routineUpdatedAt = Math.max(Date.now(), (Number(routineUpdatedAt) || 0) + 1);
+  try{ localStorage.setItem(ROUTINE_UPDATED_KEY, String(routineUpdatedAt)); }catch(e){}
+}
+
 function defaultGoals(){
   const list = [];
   for(let i=1;i<=12;i++) list.push({ id:'g'+i, name:'', days:[0,1,2,3,4,5,6] });
@@ -1086,12 +1210,23 @@ function loadState(){
   try{ const j = localStorage.getItem(JOURNAL_KEY); journals = j ? JSON.parse(j) : {}; }
   catch(e){ journals = {}; }
   let rawWeek = null;
+  let rawMinWeek = null;
   let legacyItems = null;
   try{ const rw = localStorage.getItem(ROUTINE_WEEK_KEY); rawWeek = rw ? JSON.parse(rw) : null; }catch(e){ rawWeek = null; }
+  try{ const rm = localStorage.getItem(MIN_ROUTINE_WEEK_KEY); rawMinWeek = rm ? JSON.parse(rm) : null; }catch(e){ rawMinWeek = null; }
   try{ const rt = localStorage.getItem(ROUTINE_KEY); legacyItems = rt ? JSON.parse(rt) : null; }catch(e){ legacyItems = null; }
   routineByDay = normalizeRoutineByDay(rawWeek, legacyItems);
+  minRoutineByDay = normalizeRoutineByDay(rawMinWeek, null);
   try{ const ro = localStorage.getItem(ROUTINE_OVERRIDES_KEY); routineOverrides = normalizeRoutineOverrides(ro ? JSON.parse(ro) : null); }
   catch(e){ routineOverrides = {}; }
+  try{ const dm = localStorage.getItem(DAY_ROUTINE_MODE_KEY); dayRoutineModes = normalizeDayRoutineModes(dm ? JSON.parse(dm) : null); }
+  catch(e){ dayRoutineModes = {}; }
+  try{ const ru = localStorage.getItem(ROUTINE_UPDATED_KEY); routineUpdatedAt = ru ? (Number(ru) || 0) : 0; }
+  catch(e){ routineUpdatedAt = 0; }
+  if(!routineUpdatedAt && (countRoutineWeekItems(routineByDay) > 0 || countRoutineWeekItems(minRoutineByDay) > 0 || Object.keys(routineOverrides).length > 0 || Object.keys(dayRoutineModes).length > 0)){
+    routineUpdatedAt = 1;
+    try{ localStorage.setItem(ROUTINE_UPDATED_KEY, '1'); }catch(e){}
+  }
   try{ const r = localStorage.getItem(REMINDER_KEY); if(r) reminder = JSON.parse(r); }
   catch(e){}
 }
@@ -1113,9 +1248,19 @@ function formatCloudErrorMessage(err){
 function pushToCloud(){
   if(cloudEnabled && currentUser && typeof firebase !== 'undefined'){
     try{
-      const payload = JSON.parse(JSON.stringify({ goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides }));
-      return firebase.firestore().collection('users').doc(currentUser.uid)
-        .set(payload)
+      const raw = { goals, completions, reminder, restDays, skipDays, journals };
+      const includeRoutines = hasRemoteSyncCompleted || routineUpdatedAt > 0 || countRoutineWeekItems(routineByDay) > 0 || countRoutineWeekItems(minRoutineByDay) > 0 || Object.keys(routineOverrides).length > 0 || Object.keys(dayRoutineModes).length > 0;
+      if(includeRoutines){
+        raw.routineByDay = routineByDay;
+        raw.minRoutineByDay = minRoutineByDay;
+        raw.routineOverrides = routineOverrides;
+        raw.dayRoutineModes = dayRoutineModes;
+        raw.routineUpdatedAt = routineUpdatedAt;
+      }
+      const payload = JSON.parse(JSON.stringify(raw));
+      const ref = firebase.firestore().collection('users').doc(currentUser.uid);
+      const writePromise = includeRoutines ? ref.set(payload) : ref.set(payload, { merge: true });
+      return writePromise
         .then(() => {
           lastCloudError = '';
           lastCloudSyncAt = new Date();
@@ -1145,7 +1290,9 @@ function saveJournals(immediateCloud = true){
 }
 let routineCloudTimer = null;
 function saveRoutine(immediateCloud = true){
+  touchRoutineUpdatedAt();
   try{ localStorage.setItem(ROUTINE_WEEK_KEY, JSON.stringify(routineByDay)); }catch(e){}
+  try{ localStorage.setItem(MIN_ROUTINE_WEEK_KEY, JSON.stringify(minRoutineByDay)); }catch(e){}
   if(immediateCloud){
     if(routineCloudTimer){ clearTimeout(routineCloudTimer); routineCloudTimer = null; }
     pushToCloud();
@@ -1156,6 +1303,7 @@ function saveRoutine(immediateCloud = true){
 }
 let overrideCloudTimer = null;
 function saveRoutineOverrides(immediateCloud = true){
+  touchRoutineUpdatedAt();
   try{ localStorage.setItem(ROUTINE_OVERRIDES_KEY, JSON.stringify(routineOverrides)); }catch(e){}
   if(immediateCloud){
     if(overrideCloudTimer){ clearTimeout(overrideCloudTimer); overrideCloudTimer = null; }
@@ -1163,6 +1311,13 @@ function saveRoutineOverrides(immediateCloud = true){
   } else {
     if(overrideCloudTimer) clearTimeout(overrideCloudTimer);
     overrideCloudTimer = setTimeout(() => { overrideCloudTimer = null; pushToCloud(); }, 500);
+  }
+}
+function saveDayRoutineModes(immediateCloud = true){
+  touchRoutineUpdatedAt();
+  try{ localStorage.setItem(DAY_ROUTINE_MODE_KEY, JSON.stringify(dayRoutineModes)); }catch(e){}
+  if(immediateCloud){
+    pushToCloud();
   }
 }
 
@@ -1225,9 +1380,11 @@ function insertRoutineItem(list, newItem){
 
 function getRoutineForDate(dateStr){
   const wd = weekdayIndex(dateStr);
+  const mode = getDayRoutineMode(dateStr);
   const isCustom = Object.prototype.hasOwnProperty.call(routineOverrides, dateStr) && Array.isArray(routineOverrides[dateStr]);
-  const items = isCustom ? routineOverrides[dateStr] : (routineByDay[String(wd)] || []);
-  return { items, isCustom, wd };
+  const templateMap = mode === 'minimum' ? minRoutineByDay : routineByDay;
+  const items = isCustom ? routineOverrides[dateStr] : (templateMap[String(wd)] || []);
+  return { items, isCustom, mode, wd };
 }
 
 function weekdayIndex(dateStr){
@@ -1289,6 +1446,7 @@ function setRestDay(dateStr, on){
 let overlayEl = null;
 function closeModal(){
   flushPendingCloudSync();
+  activeDayRoutineRefresh = null;
   if(overlayEl){ overlayEl.remove(); overlayEl = null; }
   document.removeEventListener('keydown', escHandler);
 }
@@ -1703,33 +1861,87 @@ function openDayModal(dateStr, showSkip = false){
     routineHead.append(routineCaption, routineHeadRight);
     routineSection.appendChild(routineHead);
 
+    const routineDaySwitcher = document.createElement('div');
+    routineDaySwitcher.className = 'day-routine-switcher';
+    routineSection.appendChild(routineDaySwitcher);
+
     const routineDayWrap = document.createElement('div');
     routineSection.appendChild(routineDayWrap);
 
     let dayRoutineEditMode = false;
 
+    function setDayRoutineMode(mode){
+      if(mode === 'minimum'){
+        dayRoutineModes[dateStr] = 'minimum';
+      } else {
+        delete dayRoutineModes[dateStr];
+      }
+      if(Object.prototype.hasOwnProperty.call(routineOverrides, dateStr)){
+        delete routineOverrides[dateStr];
+        if(overrideCloudTimer){ clearTimeout(overrideCloudTimer); overrideCloudTimer = null; }
+        try{ localStorage.setItem(ROUTINE_OVERRIDES_KEY, JSON.stringify(routineOverrides)); }catch(e){}
+      }
+      saveDayRoutineModes(true);
+      dayRoutineEditMode = false;
+      renderDayRoutine();
+    }
+
     function updateDayRoutineHeader(){
-      const { items, isCustom } = getRoutineForDate(dateStr);
+      const { items, isCustom, mode } = getRoutineForDate(dateStr);
       if(isCustom){
         routineBadge.textContent = 'Bu güne özel';
         routineBadge.className = 'schedule-badge custom';
       } else if(items.length === 0){
-        routineBadge.textContent = 'Boş';
-        routineBadge.className = 'schedule-badge';
+        routineBadge.textContent = mode === 'minimum' ? 'Minimum · Boş' : 'Normal · Boş';
+        routineBadge.className = 'schedule-badge' + (mode === 'minimum' ? ' minimum' : '');
       } else {
-        routineBadge.textContent = `${fullDayNames[wd]} · ${items.length} iş`;
-        routineBadge.className = 'schedule-badge';
+        routineBadge.textContent = mode === 'minimum'
+          ? `Minimum · ${items.length} iş`
+          : `${fullDayNames[wd]} · ${items.length} iş`;
+        routineBadge.className = 'schedule-badge' + (mode === 'minimum' ? ' minimum' : '');
       }
       routineEditDayBtn.textContent = dayRoutineEditMode ? 'Tamamla' : 'Bu Günü Düzenle';
       routineEditDayBtn.classList.toggle('active', dayRoutineEditMode);
       routineResetBtn.style.display = isCustom ? '' : 'none';
     }
 
+    function renderDayModeSwitcher(){
+      const { isCustom, mode } = getRoutineForDate(dateStr);
+      const normalCount = (routineByDay[String(wd)] || []).length;
+      const minCount = (minRoutineByDay[String(wd)] || []).length;
+      routineDaySwitcher.innerHTML = '';
+
+      const normalBtn = document.createElement('button');
+      normalBtn.type = 'button';
+      normalBtn.className = 'day-mode-btn' + (!isCustom && mode === 'normal' ? ' active' : '');
+      normalBtn.setAttribute('aria-pressed', (!isCustom && mode === 'normal') ? 'true' : 'false');
+      normalBtn.textContent = `Normal Rutin (${normalCount})`;
+      normalBtn.addEventListener('click', () => {
+        if(!isCustom && mode === 'normal') return;
+        setDayRoutineMode('normal');
+      });
+
+      const minBtn = document.createElement('button');
+      minBtn.type = 'button';
+      minBtn.className = 'day-mode-btn minimum' + (!isCustom && mode === 'minimum' ? ' active' : '');
+      minBtn.setAttribute('aria-pressed', (!isCustom && mode === 'minimum') ? 'true' : 'false');
+      minBtn.textContent = `Minimum Rutin (${minCount})`;
+      minBtn.addEventListener('click', () => {
+        if(!isCustom && mode === 'minimum') return;
+        setDayRoutineMode('minimum');
+      });
+
+      routineDaySwitcher.append(normalBtn, minBtn);
+    }
+
     function ensureDayOverride(){
       if(!Object.prototype.hasOwnProperty.call(routineOverrides, dateStr) || !Array.isArray(routineOverrides[dateStr])){
-        const base = routineByDay[String(wd)] || [];
+        const mode = getDayRoutineMode(dateStr);
+        const baseMap = mode === 'minimum' ? minRoutineByDay : routineByDay;
+        const base = baseMap[String(wd)] || [];
         routineOverrides[dateStr] = base.map(it => cloneRoutineItem(it, true));
         updateDayRoutineHeader();
+        renderDayModeSwitcher();
       }
     }
 
@@ -1747,8 +1959,9 @@ function openDayModal(dateStr, showSkip = false){
     });
 
     function renderDayRoutine(){
-      const { items, isCustom } = getRoutineForDate(dateStr);
+      const { items, isCustom, mode } = getRoutineForDate(dateStr);
       updateDayRoutineHeader();
+      renderDayModeSwitcher();
 
       routineDayWrap.innerHTML = '';
 
@@ -1759,7 +1972,9 @@ function openDayModal(dateStr, showSkip = false){
           const msg = document.createElement('span');
           msg.textContent = isCustom
             ? 'Bu gün için özel rutin boş bırakıldı.'
-            : `${fullDayNames[wd]} günü için henüz rutin oluşturulmadı.`;
+            : (mode === 'minimum'
+              ? `${fullDayNames[wd]} için henüz minimum rutin oluşturulmadı.`
+              : `${fullDayNames[wd]} günü için henüz rutin oluşturulmadı.`);
           const actionsWrap = document.createElement('div');
           actionsWrap.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
           const addDayBtn = document.createElement('button');
@@ -1773,10 +1988,10 @@ function openDayModal(dateStr, showSkip = false){
           const goTplBtn = document.createElement('button');
           goTplBtn.type = 'button';
           goTplBtn.className = 'day-routine-edit-btn';
-          goTplBtn.textContent = 'Ana Sayfa Rutini';
+          goTplBtn.textContent = mode === 'minimum' ? 'Minimum Rutin Oluştur' : 'Ana Sayfa Rutini';
           goTplBtn.addEventListener('click', () => {
             closeModal();
-            openMainRoutineEditor(true, wd);
+            openMainRoutineEditor(true, wd, mode);
           });
           actionsWrap.append(addDayBtn, goTplBtn);
           empty.append(msg, actionsWrap);
@@ -2028,6 +2243,9 @@ function openDayModal(dateStr, showSkip = false){
     }
 
     renderDayRoutine();
+    activeDayRoutineRefresh = () => {
+      if(!dayRoutineEditMode) renderDayRoutine();
+    };
     storyColumn.appendChild(routineSection);
 
     const journalSection = document.createElement('div');
@@ -2253,7 +2471,7 @@ function openReminderModal(){
 
 // ---------- Yedekleme (dışa aktar / içe aktar) ----------
 function exportBackup(){
-  const data = { goals, completions, reminder, restDays, skipDays, journals, routineByDay, routineOverrides, exportedAt: new Date().toISOString() };
+  const data = { goals, completions, reminder, restDays, skipDays, journals, routineByDay, minRoutineByDay, routineOverrides, dayRoutineModes, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2279,10 +2497,16 @@ function importBackupFile(file){
       if(data.routineByDay || Array.isArray(data.routineItems)){
         routineByDay = normalizeRoutineByDay(data.routineByDay, data.routineItems);
       }
+      if(data.minRoutineByDay && typeof data.minRoutineByDay === 'object'){
+        minRoutineByDay = normalizeRoutineByDay(data.minRoutineByDay, null);
+      }
       if(data.routineOverrides && typeof data.routineOverrides === 'object'){
         routineOverrides = normalizeRoutineOverrides(data.routineOverrides);
       }
-      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip(); saveJournals(); saveRoutine(); saveRoutineOverrides();
+      if(data.dayRoutineModes && typeof data.dayRoutineModes === 'object'){
+        dayRoutineModes = normalizeDayRoutineModes(data.dayRoutineModes);
+      }
+      saveGoals(); saveCompletions(); saveReminder(); saveRest(); saveSkip(); saveJournals(); saveRoutine(); saveRoutineOverrides(); saveDayRoutineModes();
       renderRoutineEditor();
       renderGrid(); renderStats();
       alert('Yedek geri yüklendi.');
@@ -2341,19 +2565,62 @@ function updateAccountUI(){
   }
 }
 
-function applyRemoteData(data){
+function applyRemoteData(data, fromCache = false){
+  if(!data || typeof data !== 'object') return;
   if(Array.isArray(data.goals)) goals = data.goals;
   if(data.completions && typeof data.completions === 'object') completions = data.completions;
   if(data.reminder && typeof data.reminder === 'object') reminder = data.reminder;
   if(data.restDays && typeof data.restDays === 'object') restDays = data.restDays;
   if(data.skipDays && typeof data.skipDays === 'object') skipDays = data.skipDays;
   if(data.journals && typeof data.journals === 'object') journals = data.journals;
-  if(data.routineByDay || Array.isArray(data.routineItems)){
-    routineByDay = normalizeRoutineByDay(data.routineByDay, data.routineItems);
+
+  const remoteHasRoutineField = Boolean((data.routineByDay && typeof data.routineByDay === 'object' && !Array.isArray(data.routineByDay)) || Array.isArray(data.routineItems));
+  const remoteHasMinField = Boolean(data.minRoutineByDay && typeof data.minRoutineByDay === 'object' && !Array.isArray(data.minRoutineByDay));
+  const remoteHasOverridesField = Boolean(data.routineOverrides && typeof data.routineOverrides === 'object' && !Array.isArray(data.routineOverrides));
+  const remoteHasDayModesField = Boolean(data.dayRoutineModes && typeof data.dayRoutineModes === 'object' && !Array.isArray(data.dayRoutineModes));
+  const remoteRoutineCount = countRoutineWeekItems(data.routineByDay) + countRoutineWeekItems(data.minRoutineByDay) + (Array.isArray(data.routineItems) ? data.routineItems.length : 0);
+  const remoteOverridesCount = remoteHasOverridesField ? Object.keys(data.routineOverrides).length : 0;
+  const remoteDayModesCount = remoteHasDayModesField ? Object.keys(data.dayRoutineModes).length : 0;
+  const remoteRoutineTs = typeof data.routineUpdatedAt === 'number' ? data.routineUpdatedAt : ((remoteRoutineCount > 0 || remoteOverridesCount > 0 || remoteDayModesCount > 0) ? 1 : 0);
+
+  let shouldBackfillCloudRoutines = false;
+  const localHasAnyRoutineData = routineUpdatedAt > 0 || countRoutineWeekItems(routineByDay) > 0 || countRoutineWeekItems(minRoutineByDay) > 0 || Object.keys(routineOverrides).length > 0 || Object.keys(dayRoutineModes).length > 0;
+  if(!remoteHasRoutineField && !remoteHasMinField && remoteOverridesCount === 0 && remoteDayModesCount === 0){
+    if(localHasAnyRoutineData){
+      shouldBackfillCloudRoutines = true;
+    }
+  } else if(routineUpdatedAt > remoteRoutineTs){
+    shouldBackfillCloudRoutines = true;
+  } else {
+    if(remoteHasRoutineField){
+      routineByDay = normalizeRoutineByDay(data.routineByDay, data.routineItems);
+    } else if(remoteRoutineTs > routineUpdatedAt){
+      routineByDay = createEmptyRoutineWeek();
+    }
+    if(remoteHasMinField){
+      minRoutineByDay = normalizeRoutineByDay(data.minRoutineByDay, null);
+    } else if(countRoutineWeekItems(minRoutineByDay) > 0 && remoteRoutineTs === routineUpdatedAt){
+      shouldBackfillCloudRoutines = true;
+    } else if(remoteRoutineTs > routineUpdatedAt){
+      minRoutineByDay = createEmptyRoutineWeek();
+    }
+    if(remoteHasOverridesField){
+      routineOverrides = normalizeRoutineOverrides(data.routineOverrides);
+    } else if(remoteRoutineTs > routineUpdatedAt){
+      routineOverrides = {};
+    }
+    if(remoteHasDayModesField){
+      dayRoutineModes = normalizeDayRoutineModes(data.dayRoutineModes);
+    } else if(Object.keys(dayRoutineModes).length > 0 && remoteRoutineTs === routineUpdatedAt){
+      shouldBackfillCloudRoutines = true;
+    } else if(remoteRoutineTs > routineUpdatedAt){
+      dayRoutineModes = {};
+    }
+    if(remoteRoutineTs > 0){
+      routineUpdatedAt = remoteRoutineTs;
+    }
   }
-  if(data.routineOverrides && typeof data.routineOverrides === 'object'){
-    routineOverrides = normalizeRoutineOverrides(data.routineOverrides);
-  }
+
   try{ localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); }catch(e){}
   try{ localStorage.setItem(COMPLETIONS_KEY, JSON.stringify(completions)); }catch(e){}
   try{ localStorage.setItem(REMINDER_KEY, JSON.stringify(reminder)); }catch(e){}
@@ -2361,10 +2628,21 @@ function applyRemoteData(data){
   try{ localStorage.setItem(SKIP_KEY, JSON.stringify(skipDays)); }catch(e){}
   try{ localStorage.setItem(JOURNAL_KEY, JSON.stringify(journals)); }catch(e){}
   try{ localStorage.setItem(ROUTINE_WEEK_KEY, JSON.stringify(routineByDay)); }catch(e){}
+  try{ localStorage.setItem(MIN_ROUTINE_WEEK_KEY, JSON.stringify(minRoutineByDay)); }catch(e){}
   try{ localStorage.setItem(ROUTINE_OVERRIDES_KEY, JSON.stringify(routineOverrides)); }catch(e){}
+  try{ localStorage.setItem(DAY_ROUTINE_MODE_KEY, JSON.stringify(dayRoutineModes)); }catch(e){}
+  try{ localStorage.setItem(ROUTINE_UPDATED_KEY, String(routineUpdatedAt)); }catch(e){}
   renderRoutineEditor();
   renderGrid();
   renderStats();
+  if(typeof activeDayRoutineRefresh === 'function') activeDayRoutineRefresh();
+
+  if(!fromCache){
+    hasRemoteSyncCompleted = true;
+    if(shouldBackfillCloudRoutines){
+      pushToCloud();
+    }
+  }
 }
 
 function syncFromCloudNow(){
@@ -2375,10 +2653,11 @@ function syncFromCloudNow(){
     lastCloudSyncAt = new Date();
     if(snap.exists){
       if(!(journalCloudTimer || routineCloudTimer || overrideCloudTimer)){
-        applyRemoteData(snap.data());
+        applyRemoteData(snap.data(), false);
       }
       return true;
     }
+    hasRemoteSyncCompleted = true;
     return pushToCloud().then(() => !lastCloudError);
   }).catch((err) => {
     lastCloudError = formatCloudErrorMessage(err);
@@ -2394,6 +2673,7 @@ function initCloudSync(){
   });
   firebase.auth().onAuthStateChanged((user) => {
     currentUser = user;
+    hasRemoteSyncCompleted = false;
     lastCloudError = '';
     updateAccountUI();
     if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
@@ -2402,9 +2682,12 @@ function initCloudSync(){
       syncFromCloudNow();
       firestoreUnsub = ref.onSnapshot((snap) => {
         if(snap.metadata.hasPendingWrites || journalCloudTimer || routineCloudTimer || overrideCloudTimer) return;
-        lastCloudError = '';
-        lastCloudSyncAt = new Date();
-        if(snap.exists) applyRemoteData(snap.data());
+        const fromCache = !!(snap.metadata && snap.metadata.fromCache);
+        if(!fromCache){
+          lastCloudError = '';
+          lastCloudSyncAt = new Date();
+        }
+        if(snap.exists) applyRemoteData(snap.data(), fromCache);
       }, (err) => {
         lastCloudError = formatCloudErrorMessage(err);
       });
@@ -2417,18 +2700,31 @@ function flushPendingCloudSync(){
     if(journalCloudTimer){ clearTimeout(journalCloudTimer); journalCloudTimer = null; }
     if(routineCloudTimer){ clearTimeout(routineCloudTimer); routineCloudTimer = null; }
     if(overrideCloudTimer){ clearTimeout(overrideCloudTimer); overrideCloudTimer = null; }
-    pushToCloud();
+    return pushToCloud();
   }
+  return Promise.resolve();
 }
 window.addEventListener('pagehide', flushPendingCloudSync);
 window.addEventListener('beforeunload', flushPendingCloudSync);
+window.addEventListener('online', () => {
+  flushPendingCloudSync().then(() => syncFromCloudNow());
+});
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden'){
     flushPendingCloudSync();
   } else if(document.visibilityState === 'visible'){
-    syncFromCloudNow();
+    flushPendingCloudSync().then(() => syncFromCloudNow());
   }
 });
+
+function formatRoutineStatusCounts(){
+  const normalTotal = countRoutineWeekItems(routineByDay);
+  const minTotal = countRoutineWeekItems(minRoutineByDay);
+  if(minTotal > 0){
+    return normalTotal + ' normal, ' + minTotal + ' minimum rutin';
+  }
+  return normalTotal + ' rutin';
+}
 
 function openAccountModal(){
   openModal('Hesap', (body) => {
@@ -2450,6 +2746,7 @@ function openAccountModal(){
       const statusBox = document.createElement('div');
       statusBox.className = 'modal-info';
       const paintSyncStatus = (customMsg = '') => {
+        const routineSummary = formatRoutineStatusCounts();
         if(customMsg){
           statusBox.style.color = 'var(--gold)';
           statusBox.textContent = customMsg;
@@ -2460,10 +2757,10 @@ function openAccountModal(){
           statusBox.textContent = 'Senkronizasyon hatası: ' + lastCloudError;
         } else if(lastCloudSyncAt){
           statusBox.style.color = 'var(--muted)';
-          statusBox.textContent = 'Son eşitleme: ' + lastCloudSyncAt.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+          statusBox.textContent = 'Son eşitleme: ' + lastCloudSyncAt.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) + ' · ' + routineSummary;
         } else {
           statusBox.style.color = 'var(--muted)';
-          statusBox.textContent = 'Bulut bağlantısı hazır.';
+          statusBox.textContent = 'Bulut bağlantısı hazır · ' + routineSummary;
         }
       };
       paintSyncStatus();
@@ -2479,15 +2776,16 @@ function openAccountModal(){
       syncBtn.addEventListener('click', () => {
         syncBtn.disabled = true;
         paintSyncStatus('Eşitleniyor...');
-        flushPendingCloudSync();
-        syncFromCloudNow().then((ok) => {
-          syncBtn.disabled = false;
-          if(ok && !lastCloudError){
-            paintSyncStatus('Eşitlendi.');
-          } else {
-            paintSyncStatus();
-          }
-        });
+        flushPendingCloudSync()
+          .then(() => syncFromCloudNow())
+          .then((ok) => {
+            syncBtn.disabled = false;
+            if(ok && !lastCloudError){
+              paintSyncStatus('Eşitlendi · ' + formatRoutineStatusCounts());
+            } else {
+              paintSyncStatus();
+            }
+          });
       });
 
       const outBtn = document.createElement('button');
@@ -2569,7 +2867,10 @@ function showDayHover(dateStr, anchorEl){
       return `${t !== '--:--' ? t + ' · ' : ''}${it.task}`;
     });
     if(dayRoutine.items.length > 3) lines.push(`+${dayRoutine.items.length - 3} rutin daha`);
-    hoverItems.push({ lbl: dayRoutine.isCustom ? 'BU GÜNE ÖZEL RUTİN' : 'GÜNÜN RUTİNİ', val: lines.join('\n') });
+    const hoverRoutineLbl = dayRoutine.isCustom
+      ? 'BU GÜNE ÖZEL RUTİN'
+      : (dayRoutine.mode === 'minimum' ? 'MİNİMUM RUTİN' : 'GÜNÜN RUTİNİ');
+    hoverItems.push({ lbl: hoverRoutineLbl, val: lines.join('\n') });
   }
 
   dayHoverCard.innerHTML = '';
@@ -2747,6 +3048,8 @@ setInterval(checkReminder, 20000);
 const routineBodyEl = document.getElementById('routineBody');
 const routineToggleBtn = document.getElementById('routineToggleBtn');
 const routineSummaryEl = document.getElementById('routineSummary');
+const routineModeTabsEl = document.getElementById('routineModeTabs');
+const routineHintEl = document.getElementById('routineHint');
 const routineDayTabsEl = document.getElementById('routineDayTabs');
 const routineCopyWeekdaysBtn = document.getElementById('routineCopyWeekdaysBtn');
 const routineCopyWeekendBtn = document.getElementById('routineCopyWeekendBtn');
@@ -2760,11 +3063,16 @@ const routineScopeSelectEl = document.getElementById('routineScopeSelect');
 const routineListWrapEl = document.getElementById('routineListWrap');
 
 let selectedRoutineDay = weekdayIndex(todayStr);
+let selectedRoutineMode = 'normal';
 
-function getTotalRoutineItemsCount(){
-  let sum = 0;
-  for(let i = 0; i < 7; i++) sum += (routineByDay[String(i)] || []).length;
-  return sum;
+function getRoutineMapByMode(mode = selectedRoutineMode){
+  return mode === 'minimum' ? minRoutineByDay : routineByDay;
+}
+
+function getTotalRoutineItemsCount(mode = null){
+  if(mode === 'normal') return countRoutineWeekItems(routineByDay);
+  if(mode === 'minimum') return countRoutineWeekItems(minRoutineByDay);
+  return countRoutineWeekItems(routineByDay) + countRoutineWeekItems(minRoutineByDay);
 }
 
 function setRoutinePanelOpen(open){
@@ -2784,27 +3092,42 @@ function updateRoutineToggleLabel(){
 }
 
 function updateRoutineSummaryOnly(){
-  const currentItems = routineByDay[String(selectedRoutineDay)] || [];
+  const activeMap = getRoutineMapByMode();
+  const currentItems = activeMap[String(selectedRoutineDay)] || [];
+  const modeTotal = getTotalRoutineItemsCount(selectedRoutineMode);
+  const allTotal = getTotalRoutineItemsCount();
+  const modePrefix = selectedRoutineMode === 'minimum' ? 'Minimum · ' : '';
   if(currentItems.length === 0){
-    const totalCount = getTotalRoutineItemsCount();
-    routineSummaryEl.textContent = totalCount === 0
-      ? 'Günlere göre saat aralığı ve iş sırası oluştur'
-      : `${fullDayNames[selectedRoutineDay]} boş · Haftalık toplam ${totalCount} iş`;
+    if(allTotal === 0){
+      routineSummaryEl.textContent = 'Günlere göre saat aralığı ve iş sırası oluştur';
+    } else if(modeTotal === 0){
+      routineSummaryEl.textContent = selectedRoutineMode === 'minimum'
+        ? `${fullDayNames[selectedRoutineDay]} · Minimum rutin henüz boş`
+        : `Normal rutin boş · Minimumda ${allTotal} iş`;
+    } else {
+      routineSummaryEl.textContent = `${modePrefix}${fullDayNames[selectedRoutineDay]} boş · Haftalık toplam ${modeTotal} iş`;
+    }
   } else {
     const preview = currentItems.slice(0, 3).map(it => {
       const t = formatRoutineTime(it);
       return `${t !== '--:--' ? t + ' ' : ''}${it.task}`;
     }).join('  ·  ');
-    routineSummaryEl.textContent = `${fullDayNames[selectedRoutineDay]} (${currentItems.length} iş): ${preview}${currentItems.length > 3 ? ' ...' : ''}`;
+    routineSummaryEl.textContent = `${modePrefix}${fullDayNames[selectedRoutineDay]} (${currentItems.length} iş): ${preview}${currentItems.length > 3 ? ' ...' : ''}`;
   }
 }
 
-function openMainRoutineEditor(focusInput = false, dayIdx = null){
+function openMainRoutineEditor(focusInput = false, dayIdx = null, mode = null){
+  let changed = false;
+  if(mode === 'normal' || mode === 'minimum'){
+    selectedRoutineMode = mode;
+    changed = true;
+  }
   if(dayIdx !== null && dayIdx >= 0 && dayIdx <= 6){
     selectedRoutineDay = dayIdx;
     syncScopeWithSelectedDay();
-    renderRoutineEditor();
+    changed = true;
   }
+  if(changed) renderRoutineEditor();
   setRoutinePanelOpen(true);
   document.getElementById('routinePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   if(focusInput) setTimeout(() => routineTaskInputEl.focus(), 120);
@@ -2819,8 +3142,42 @@ function syncScopeWithSelectedDay(){
 
 function renderRoutineEditor(){
   updateRoutineToggleLabel();
+  const activeMap = getRoutineMapByMode();
   const activeKey = String(selectedRoutineDay);
-  const currentItems = routineByDay[activeKey] || [];
+  const currentItems = activeMap[activeKey] || [];
+  const isMinMode = selectedRoutineMode === 'minimum';
+
+  if(routineModeTabsEl){
+    routineModeTabsEl.innerHTML = '';
+    const modes = [
+      { id: 'normal', label: 'Normal Rutin', count: countRoutineWeekItems(routineByDay) },
+      { id: 'minimum', label: 'Minimum Rutin', count: countRoutineWeekItems(minRoutineByDay) }
+    ];
+    modes.forEach(m => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.role = 'tab';
+      const active = selectedRoutineMode === m.id;
+      btn.className = 'routine-mode-tab' + (m.id === 'minimum' ? ' minimum' : '') + (active ? ' active' : '');
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      btn.textContent = m.count > 0 ? `${m.label} (${m.count})` : m.label;
+      btn.addEventListener('click', () => {
+        if(selectedRoutineMode === m.id) return;
+        selectedRoutineMode = m.id;
+        renderRoutineEditor();
+      });
+      routineModeTabsEl.appendChild(btn);
+    });
+  }
+
+  if(routineHintEl){
+    routineHintEl.textContent = isMinMode
+      ? 'Yoğun veya düşük enerjili günler için minimum günlük rutin oluştur. Gün penceresinden o gün için Normal veya Minimum rutini seçebilirsin.'
+      : 'Haftanın günlerine göre saat aralığı ve iş sırası belirle. Bir günün penceresinden o gün için Normal/Minimum seçebilir veya sadece o güne özel düzenleme yapabilirsin.';
+  }
+  routineTaskInputEl.placeholder = isMinMode
+    ? 'Minimum rutin işini yaz... (örn. 15 dk yürüyüş, 20 dk okuma)'
+    : 'Rutin işini yaz... (örn. Sabah yürüyüşü, Ders çalışma)';
 
   updateRoutineSummaryOnly();
 
@@ -2839,7 +3196,7 @@ function renderRoutineEditor(){
     lblSpan.textContent = shortLbl;
     btn.appendChild(lblSpan);
 
-    const dayCount = (routineByDay[String(idx)] || []).length;
+    const dayCount = (activeMap[String(idx)] || []).length;
     if(dayCount > 0){
       const countSpan = document.createElement('span');
       countSpan.className = 'routine-day-count';
@@ -2866,7 +3223,9 @@ function renderRoutineEditor(){
   if(currentItems.length === 0){
     const empty = document.createElement('div');
     empty.className = 'schedule-empty';
-    empty.textContent = `${fullDayNames[selectedRoutineDay]} günü için henüz rutin eklenmedi. Yukarıdan saat aralığı ve iş ekleyebilirsin.`;
+    empty.textContent = isMinMode
+      ? `${fullDayNames[selectedRoutineDay]} günü için henüz minimum rutin eklenmedi. Yukarıdan saat aralığı ve iş ekleyebilirsin.`
+      : `${fullDayNames[selectedRoutineDay]} günü için henüz rutin eklenmedi. Yukarıdan saat aralığı ve iş ekleyebilirsin.`;
     routineListWrapEl.appendChild(empty);
     return;
   }
@@ -2957,11 +3316,11 @@ function renderRoutineEditor(){
     upBtn.disabled = idx === 0;
     upBtn.addEventListener('click', () => {
       if(idx === 0) return;
-      const copy = routineByDay[activeKey].slice();
+      const copy = activeMap[activeKey].slice();
       const tmp = copy[idx - 1];
       copy[idx - 1] = copy[idx];
       copy[idx] = tmp;
-      routineByDay[activeKey] = copy;
+      activeMap[activeKey] = copy;
       saveRoutine(true);
       renderRoutineEditor();
     });
@@ -2974,12 +3333,12 @@ function renderRoutineEditor(){
     downBtn.setAttribute('aria-label', `Aşağı taşı: ${item.task}`);
     downBtn.disabled = idx === currentItems.length - 1;
     downBtn.addEventListener('click', () => {
-      if(idx >= routineByDay[activeKey].length - 1) return;
-      const copy = routineByDay[activeKey].slice();
+      if(idx >= activeMap[activeKey].length - 1) return;
+      const copy = activeMap[activeKey].slice();
       const tmp = copy[idx + 1];
       copy[idx + 1] = copy[idx];
       copy[idx] = tmp;
-      routineByDay[activeKey] = copy;
+      activeMap[activeKey] = copy;
       saveRoutine(true);
       renderRoutineEditor();
     });
@@ -2991,7 +3350,7 @@ function renderRoutineEditor(){
     delBtn.title = 'Sil';
     delBtn.setAttribute('aria-label', `Sil: ${item.task}`);
     delBtn.addEventListener('click', () => {
-      routineByDay[activeKey] = routineByDay[activeKey].filter((_, i) => i !== idx);
+      activeMap[activeKey] = activeMap[activeKey].filter((_, i) => i !== idx);
       saveRoutine(true);
       renderRoutineEditor();
     });
@@ -3004,11 +3363,12 @@ function renderRoutineEditor(){
 }
 
 function copySelectedDayRoutineTo(targetDays){
-  const srcItems = routineByDay[String(selectedRoutineDay)] || [];
+  const activeMap = getRoutineMapByMode();
+  const srcItems = activeMap[String(selectedRoutineDay)] || [];
   if(srcItems.length === 0) return;
   targetDays.forEach(dIdx => {
     if(dIdx === selectedRoutineDay) return;
-    routineByDay[String(dIdx)] = srcItems.map(it => cloneRoutineItem(it, true));
+    activeMap[String(dIdx)] = srcItems.map(it => cloneRoutineItem(it, true));
   });
   saveRoutine(true);
   renderRoutineEditor();
@@ -3018,8 +3378,9 @@ routineCopyWeekdaysBtn.addEventListener('click', () => copySelectedDayRoutineTo(
 routineCopyWeekendBtn.addEventListener('click', () => copySelectedDayRoutineTo([5,6]));
 routineCopyAllBtn.addEventListener('click', () => copySelectedDayRoutineTo([0,1,2,3,4,5,6]));
 routineSortTimeBtn.addEventListener('click', () => {
+  const activeMap = getRoutineMapByMode();
   const activeKey = String(selectedRoutineDay);
-  routineByDay[activeKey] = sortRoutineItems(routineByDay[activeKey] || []);
+  activeMap[activeKey] = sortRoutineItems(activeMap[activeKey] || []);
   saveRoutine(true);
   renderRoutineEditor();
 });
@@ -3039,6 +3400,7 @@ routineFormEl.addEventListener('submit', (e) => {
     routineTaskInputEl.focus();
     return;
   }
+  const activeMap = getRoutineMapByMode();
   const scope = routineScopeSelectEl.value;
   let targetDays = [selectedRoutineDay];
   if(scope === 'all') targetDays = [0,1,2,3,4,5,6];
@@ -3050,7 +3412,7 @@ routineFormEl.addEventListener('submit', (e) => {
 
   targetDays.forEach(dIdx => {
     const k = String(dIdx);
-    routineByDay[k] = insertRoutineItem(routineByDay[k], {
+    activeMap[k] = insertRoutineItem(activeMap[k], {
       id: makeRoutineId(),
       startTime: startVal,
       endTime: endVal,
